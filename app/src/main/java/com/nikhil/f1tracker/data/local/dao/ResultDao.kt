@@ -15,6 +15,9 @@ interface ResultDao {
     @Query("SELECT * FROM results WHERE season = :season AND round = :round ORDER BY position")
     fun getByRace(season: Int, round: Int): Flow<List<ResultEntity>>
 
+    @Query("SELECT DISTINCT round FROM results WHERE season = :season")
+    suspend fun getRoundsWithResults(season: Int): List<Int>
+
     @Query("SELECT * FROM results WHERE driverId = :driverId ORDER BY season DESC, round DESC")
     fun getByDriver(driverId: String): Flow<List<ResultEntity>>
 

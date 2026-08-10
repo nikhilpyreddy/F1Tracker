@@ -13,7 +13,9 @@ import com.nikhil.f1tracker.data.remote.dto.RaceDto
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.Year
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 
 class F1RepositoryImpl @Inject constructor(
     private val api: JolpicaApiService,
@@ -32,13 +34,27 @@ class F1RepositoryImpl @Inject constructor(
     // network data that a full sync would repopulate identically anyway.
     private val lastSyncedAt = mutableMapOf<String, Instant>()
 
-    override suspend fun syncSeason(season: Int, forceRefresh: Boolean) =
+    override suspend fun syncSeason(season: Int, forceRefresh: Boolean) {
+        if (!forceRefresh && isCompletedSeasonFullyCached(season)) return
         syncIfNeeded("season:$season", forceRefresh) {
             val races = fetchAndCacheSchedule(season)
             races.forEach { race -> syncRaceResults(season, race.round.toInt()) }
             syncDriverStandings(season, forceRefresh = true)
             syncConstructorStandings(season, forceRefresh = true)
         }
+    }
+
+    // A past season's results never change once complete, so once every scheduled race has
+    // results cached we can skip it for good — this is what keeps a multi-year sync (Grand
+    // Prix/Driver detail) from re-fetching ~25 requests per season on every app restart, which
+    // is what was tripping Jolpica's rate limit before this year's own data ever got synced.
+    private suspend fun isCompletedSeasonFullyCached(season: Int): Boolean {
+        if (season >= Year.now(clock).value) return false
+        val races = raceDao.getBySeason(season).first()
+        if (races.isEmpty()) return false
+        val roundsWithResults = resultDao.getRoundsWithResults(season).toSet()
+        return races.all { it.round in roundsWithResults }
+    }
 
     override suspend fun syncSchedule(season: Int, forceRefresh: Boolean) =
         syncIfNeeded("schedule:$season", forceRefresh) { fetchAndCacheSchedule(season) }

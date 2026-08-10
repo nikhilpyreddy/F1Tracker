@@ -8,6 +8,7 @@ import com.nikhil.f1tracker.data.local.entity.ResultEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
+import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,8 +79,9 @@ class DriverDetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             runSync {
-                seasons.forEach { f1Repository.syncDriverStandings(it) }
-                f1Repository.syncSeason(currentSeason)
+                syncSeasonsCurrentFirst(seasons, currentSeason) { year ->
+                    if (year == currentSeason) f1Repository.syncSeason(year) else f1Repository.syncDriverStandings(year)
+                }
             }
         }
     }

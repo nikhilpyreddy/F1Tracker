@@ -43,6 +43,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 
 class F1RepositoryImplTest {
 
@@ -163,6 +164,84 @@ class F1RepositoryImplTest {
         assertEquals(1, driverStandingDao.upserted.size)
         assertEquals(26.0, driverStandingDao.upserted.single().points, 0.0001)
         assertEquals(1, constructorStandingDao.upserted.size)
+    }
+
+    @Test
+    fun `syncSeason skips a past season that is already fully cached`() = runTest {
+        // Arrange
+        raceDao.upserted += RaceEntity(
+            season = 2023, round = 1, raceName = "Bahrain Grand Prix",
+            circuitId = "bahrain", date = "2023-03-05", time = null,
+        )
+        resultDao.upserted += ResultEntity(
+            season = 2023, round = 1, driverId = "max_verstappen", constructorId = "red_bull",
+            position = 1, positionText = "1", points = 25.0, grid = 1, laps = 57, status = "Finished",
+            finishTimeMillis = null, fastestLapRank = null, fastestLapTime = null,
+        )
+        val api = FakeJolpicaApiService(
+            schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
+            resultsByRound = emptyMap(),
+            driverStandings = DriverStandingsResponseDto(
+                DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2023")),
+            ),
+            constructorStandings = ConstructorStandingsResponseDto(
+                ConstructorStandingsMrDataDto("30", "0", "0", ConstructorStandingsTableDto(season = "2023")),
+            ),
+            drivers = DriverTableResponseDto(DriverTableMrDataDto("30", "0", "0", DriverTableDto())),
+            constructors = ConstructorTableResponseDto(ConstructorTableMrDataDto("30", "0", "0", ConstructorTableDto())),
+        )
+        val repository = buildRepository(api, MutableClock(Instant.parse("2024-06-01T00:00:00Z")))
+
+        // Act
+        repository.syncSeason(2023)
+
+        // Assert
+        assertEquals(0, api.seasonScheduleCallCount)
+    }
+
+    @Test
+    fun `syncSeason refetches a past season that is only partially cached`() = runTest {
+        // Arrange
+        raceDao.upserted += RaceEntity(
+            season = 2023, round = 1, raceName = "Bahrain Grand Prix",
+            circuitId = "bahrain", date = "2023-03-05", time = null,
+        )
+        raceDao.upserted += RaceEntity(
+            season = 2023, round = 2, raceName = "Saudi Arabian Grand Prix",
+            circuitId = "jeddah", date = "2023-03-19", time = null,
+        )
+        // Only round 1 has cached results; round 2 is missing, so the season isn't complete yet.
+        resultDao.upserted += ResultEntity(
+            season = 2023, round = 1, driverId = "max_verstappen", constructorId = "red_bull",
+            position = 1, positionText = "1", points = 25.0, grid = 1, laps = 57, status = "Finished",
+            finishTimeMillis = null, fastestLapRank = null, fastestLapTime = null,
+        )
+        val scheduleRace = RaceDto(
+            season = "2023", round = "1", raceName = "Bahrain Grand Prix", circuit = circuit, date = "2023-03-05",
+        )
+        val api = FakeJolpicaApiService(
+            schedule = RaceResponseDto(RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(scheduleRace)))),
+            resultsByRound = mapOf(
+                1 to RaceResponseDto(
+                    RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(scheduleRace))),
+                ),
+            ),
+            driverStandings = DriverStandingsResponseDto(
+                DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2023")),
+            ),
+            constructorStandings = ConstructorStandingsResponseDto(
+                ConstructorStandingsMrDataDto("30", "0", "0", ConstructorStandingsTableDto(season = "2023")),
+            ),
+            drivers = DriverTableResponseDto(DriverTableMrDataDto("30", "0", "0", DriverTableDto())),
+            constructors = ConstructorTableResponseDto(ConstructorTableMrDataDto("30", "0", "0", ConstructorTableDto())),
+        )
+        val repository = buildRepository(api, MutableClock(Instant.parse("2024-06-01T00:00:00Z")))
+
+        // Act
+        repository.syncSeason(2023)
+
+        // Assert
+        assertEquals(1, api.seasonScheduleCallCount)
     }
 
     @Test

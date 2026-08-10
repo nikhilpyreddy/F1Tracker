@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
+import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -59,11 +60,19 @@ class TeamDetailViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), TeamDetailUiState())
 
     init {
-        viewModelScope.launch { runSync { seasons.forEach { f1Repository.syncConstructorStandings(it) } } }
+        viewModelScope.launch {
+            runSync {
+                syncSeasonsCurrentFirst(seasons, currentSeason) { year -> f1Repository.syncConstructorStandings(year) }
+            }
+        }
     }
 
     fun retry() {
-        viewModelScope.launch { runSync { seasons.forEach { f1Repository.syncConstructorStandings(it) } } }
+        viewModelScope.launch {
+            runSync {
+                syncSeasonsCurrentFirst(seasons, currentSeason) { year -> f1Repository.syncConstructorStandings(year) }
+            }
+        }
     }
 
     private suspend fun runSync(block: suspend () -> Unit) {

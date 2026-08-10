@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.GRAND_PRIX_HISTORY_YEARS
 import com.nikhil.f1tracker.domain.model.lastNSeasons
+import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,7 +116,7 @@ class GrandPrixDetailViewModel @Inject constructor(
             loadErrorMessage.value = null
             try {
                 f1Repository.syncDriverRoster(currentSeason)
-                historySeasons.forEach { f1Repository.syncSeason(it) }
+                syncSeasonsCurrentFirst(historySeasons, currentSeason) { year -> f1Repository.syncSeason(year) }
             } catch (e: IOException) {
                 loadErrorMessage.value = "Couldn't load race history. Check your connection and try again."
             } catch (e: HttpException) {

@@ -7,6 +7,7 @@ import com.nikhil.f1tracker.data.local.entity.DriverEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
+import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -81,9 +82,9 @@ class CompareViewModel @Inject constructor(
             runSync {
                 f1Repository.syncDriverRoster(currentSeason)
                 f1Repository.syncConstructorRoster(currentSeason)
-                seasons.forEach {
-                    f1Repository.syncDriverStandings(it)
-                    f1Repository.syncConstructorStandings(it)
+                syncSeasonsCurrentFirst(seasons, currentSeason) { year ->
+                    f1Repository.syncDriverStandings(year)
+                    f1Repository.syncConstructorStandings(year)
                 }
             }
         }
@@ -108,9 +109,9 @@ class CompareViewModel @Inject constructor(
     fun retry() {
         viewModelScope.launch {
             runSync {
-                seasons.forEach {
-                    f1Repository.syncDriverStandings(it)
-                    f1Repository.syncConstructorStandings(it)
+                syncSeasonsCurrentFirst(seasons, currentSeason) { year ->
+                    f1Repository.syncDriverStandings(year)
+                    f1Repository.syncConstructorStandings(year)
                 }
             }
         }

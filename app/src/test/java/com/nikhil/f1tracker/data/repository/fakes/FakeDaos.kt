@@ -68,6 +68,8 @@ class FakeResultDao(private val raceDao: FakeRaceDao) : ResultDao {
     }
     override fun getByRace(season: Int, round: Int): Flow<List<ResultEntity>> =
         flowOf(upserted.filter { it.season == season && it.round == round })
+    override suspend fun getRoundsWithResults(season: Int): List<Int> =
+        upserted.filter { it.season == season }.map { it.round }.distinct()
     override fun getByDriver(driverId: String): Flow<List<ResultEntity>> =
         flowOf(upserted.filter { it.driverId == driverId }.sortedWith(seasonRoundDescending))
     override fun getByDriverAndSeason(driverId: String, season: Int): Flow<List<ResultEntity>> =

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Larger checkered-flag mark for the splash screen, where (unlike the adaptive icon
+     foreground) there's no safe-zone bleed to reserve, so the pattern can fill more space. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14,14h20v20h-20z M54,14h20v20h-20z M34,34h20v20h-20z M74,34h20v20h-20z M14,54h20v20h-20z M54,54h20v20h-20z M34,74h20v20h-20z M74,74h20v20h-20z" />
+    <path
+        android:fillColor="#FF1A1A1A"
+        android:pathData="M34,14h20v20h-20z M74,14h20v20h-20z M14,34h20v20h-20z M54,34h20v20h-20z M34,54h20v20h-20z M74,54h20v20h-20z M14,74h20v20h-20z M54,74h20v20h-20z" />
+</vector>

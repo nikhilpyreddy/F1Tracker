@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Clock
 import java.time.LocalDate
 import java.time.Year
 import javax.inject.Inject
@@ -26,9 +27,10 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val f1Repository: F1Repository,
     favoritesRepository: FavoritesRepository,
+    private val clock: Clock,
 ) : ViewModel() {
 
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(clock).value
     private val isLoading = MutableStateFlow(true)
     private val isRefreshing = MutableStateFlow(false)
     private val loadErrorMessage = MutableStateFlow<String?>(null)
@@ -68,11 +70,14 @@ class HomeViewModel @Inject constructor(
     private fun buildUiState(races: RaceData, entities: EntityData, status: SyncStatus): HomeUiState {
         val driverNamesById = entities.drivers.associateBy { it.driverId }
         val teamNamesById = entities.constructors.associateBy { it.constructorId }
+        val calendar = buildCalendar(races.races)
         return HomeUiState(
             isLoading = status.isLoading,
             isRefreshing = status.isRefreshing,
             loadErrorMessage = status.loadErrorMessage,
-            nextRace = findNextRace(races.races),
+            nextRace = calendar.find { it.status == RaceStatus.NEXT }
+                ?.let { UpcomingRace(raceName = it.raceName, date = it.date, round = it.round, circuitId = it.circuitId) },
+            calendar = calendar,
             favoriteDrivers = races.driverStandings
                 .filter { it.driverId in entities.selection.driverIds }
                 .sortedBy { it.position }
@@ -84,13 +89,23 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun findNextRace(races: List<RaceEntity>): UpcomingRace? {
-        val today = LocalDate.now()
-        return races
-            .filter { runCatching { LocalDate.parse(it.date) >= today }.getOrDefault(false) }
-            .minByOrNull { it.round }
-            ?.let { UpcomingRace(raceName = it.raceName, date = it.date, round = it.round, circuitId = it.circuitId) }
+    private fun buildCalendar(races: List<RaceEntity>): List<CalendarRace> {
+        val today = LocalDate.now(clock)
+        val sorted = races.sortedBy { it.round }
+        val nextRound = sorted.firstOrNull { it.isOnOrAfter(today) }?.round
+        return sorted.map { race ->
+            val status = when {
+                race.round == nextRound -> RaceStatus.NEXT
+                race.isOnOrAfter(today) -> RaceStatus.UPCOMING
+                else -> RaceStatus.COMPLETED
+            }
+            CalendarRace(race.round, race.raceName, race.date, race.circuitId, status)
+        }
     }
+
+    // An unparseable date is treated as already past rather than hiding the whole calendar.
+    private fun RaceEntity.isOnOrAfter(day: LocalDate): Boolean =
+        runCatching { LocalDate.parse(date) >= day }.getOrDefault(false)
 
     private fun syncCurrentSeason(forceRefresh: Boolean) {
         if (forceRefresh) isRefreshing.value = true else isLoading.value = true

@@ -5,6 +5,7 @@ data class HomeUiState(
     val isRefreshing: Boolean = false,
     val loadErrorMessage: String? = null,
     val nextRace: UpcomingRace? = null,
+    val calendar: List<CalendarRace> = emptyList(),
     val favoriteDrivers: List<FavoriteDriverStanding> = emptyList(),
     val favoriteTeams: List<FavoriteTeamStanding> = emptyList(),
 )
@@ -14,6 +15,16 @@ data class UpcomingRace(
     val date: String,
     val round: Int,
     val circuitId: String,
+)
+
+enum class RaceStatus { COMPLETED, NEXT, UPCOMING }
+
+data class CalendarRace(
+    val round: Int,
+    val raceName: String,
+    val date: String,
+    val circuitId: String,
+    val status: RaceStatus,
 )
 
 data class FavoriteDriverStanding(

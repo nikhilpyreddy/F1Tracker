@@ -20,6 +20,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,8 +93,15 @@ private fun HomeContent(
     onGrandPrixClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isCalendarExpanded by rememberSaveable { mutableStateOf(false) }
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item { NextRaceCard(uiState.nextRace, onClick = onGrandPrixClick) }
+        calendarSection(
+            calendar = uiState.calendar,
+            isExpanded = isCalendarExpanded,
+            onToggleExpanded = { isCalendarExpanded = !isCalendarExpanded },
+            onRaceClick = onGrandPrixClick,
+        )
         if (uiState.favoriteDrivers.isNotEmpty()) {
             item { SectionHeader("Favorite drivers") }
             items(uiState.favoriteDrivers, key = { it.driverId }) { driver ->
@@ -145,7 +155,7 @@ private fun NextRaceCard(nextRace: UpcomingRace?, onClick: (String) -> Unit, mod
 }
 
 @Composable
-private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
+fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
@@ -167,6 +177,11 @@ private fun HomeScreenPreview() {
             uiState = HomeUiState(
                 isLoading = false,
                 nextRace = UpcomingRace("Bahrain Grand Prix", "2026-03-08", 1, "bahrain"),
+                calendar = listOf(
+                    CalendarRace(1, "Australian Grand Prix", "2026-03-01", "albert_park", RaceStatus.COMPLETED),
+                    CalendarRace(2, "Bahrain Grand Prix", "2026-03-08", "bahrain", RaceStatus.NEXT),
+                    CalendarRace(3, "Saudi Arabian Grand Prix", "2026-03-15", "jeddah", RaceStatus.UPCOMING),
+                ),
                 favoriteDrivers = listOf(
                     FavoriteDriverStanding("max_verstappen", "Max Verstappen", "Red Bull", 1, 437.0),
                 ),

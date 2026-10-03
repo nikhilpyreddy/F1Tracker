@@ -9,8 +9,11 @@ import com.nikhil.f1tracker.data.local.entity.ResultEntity
 import com.nikhil.f1tracker.data.repository.fakes.FakeF1Repository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
+import java.time.Year
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -108,5 +111,40 @@ class GrandPrixDetailViewModelTest {
         // Assert
         assertEquals("Max Verstappen", state.selectedDriverName)
         assertEquals(listOf(2026, 2025), state.history.map { it.season })
+    }
+
+    @Test
+    fun `malformed data for an older season is skipped without an error`() = runTest {
+        // Arrange
+        val currentSeason = Year.now().value
+        val brokenSeason = currentSeason - 2
+        val repository = fakeRepository().apply {
+            seasonSyncFailures[brokenSeason] = NumberFormatException("For input string: \"x\"")
+        }
+        val viewModel = GrandPrixDetailViewModel(repository, SavedStateHandle(mapOf("circuitId" to "bahrain")))
+
+        // Act
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        // Assert
+        assertNull(state.loadErrorMessage)
+        assertEquals(currentSeason, repository.syncedSeasons.first())
+        assertTrue(brokenSeason !in repository.syncedSeasons)
+        assertTrue(currentSeason - 1 in repository.syncedSeasons)
+    }
+
+    @Test
+    fun `malformed data for the current season shows an error instead of crashing`() = runTest {
+        // Arrange
+        val repository = fakeRepository().apply {
+            seasonSyncFailures[Year.now().value] = SerializationException("unexpected JSON")
+        }
+        val viewModel = GrandPrixDetailViewModel(repository, SavedStateHandle(mapOf("circuitId" to "bahrain")))
+
+        // Act
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        // Assert
+        assertTrue(state.loadErrorMessage != null)
     }
 }

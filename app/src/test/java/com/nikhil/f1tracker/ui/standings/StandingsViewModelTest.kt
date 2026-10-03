@@ -9,7 +9,9 @@ import com.nikhil.f1tracker.data.repository.fakes.FakeF1Repository
 import java.time.Year
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -82,5 +84,17 @@ class StandingsViewModelTest {
         // Assert
         assertEquals(listOf(currentSeason, currentSeason), repository.syncedDriverStandingSeasons)
         assertEquals(listOf(currentSeason, currentSeason), repository.syncedConstructorStandingSeasons)
+    }
+
+    @Test
+    fun `malformed API response shows an error instead of crashing`() = runTest {
+        // Arrange
+        val repository = FakeF1Repository().apply { syncFailure = SerializationException("unexpected JSON") }
+
+        // Act
+        val state = StandingsViewModel(repository).uiState.first { !it.isLoading }
+
+        // Assert
+        assertNotNull(state.loadErrorMessage)
     }
 }

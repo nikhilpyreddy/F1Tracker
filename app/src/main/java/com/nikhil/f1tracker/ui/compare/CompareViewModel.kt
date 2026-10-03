@@ -7,6 +7,7 @@ import com.nikhil.f1tracker.data.local.entity.DriverEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
+import com.nikhil.f1tracker.ui.common.syncCatching
 import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,8 +21,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import java.time.Year
 import javax.inject.Inject
 
@@ -143,15 +142,10 @@ class CompareViewModel @Inject constructor(
     private suspend fun runSync(block: suspend () -> Unit) {
         isLoading.value = true
         loadErrorMessage.value = null
-        try {
-            block()
-        } catch (e: IOException) {
+        syncCatching(block).onFailure {
             loadErrorMessage.value = "Couldn't load comparison data. Check your connection and try again."
-        } catch (e: HttpException) {
-            loadErrorMessage.value = "Couldn't load comparison data. Check your connection and try again."
-        } finally {
-            isLoading.value = false
         }
+        isLoading.value = false
     }
 
     private data class Roster(val drivers: List<DriverEntity>, val teams: List<ConstructorEntity>)

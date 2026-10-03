@@ -3,6 +3,7 @@ package com.nikhil.f1tracker.ui.standings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
+import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -10,8 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import java.time.Year
 import javax.inject.Inject
 
@@ -103,17 +102,14 @@ class StandingsViewModel @Inject constructor(
         viewModelScope.launch {
             if (forceRefresh) isRefreshing.value = true else isLoading.value = true
             loadErrorMessage.value = null
-            try {
+            syncCatching {
                 f1Repository.syncDriverStandings(currentSeason, forceRefresh)
                 f1Repository.syncConstructorStandings(currentSeason, forceRefresh)
-            } catch (e: IOException) {
+            }.onFailure {
                 loadErrorMessage.value = "Couldn't load standings. Check your connection and try again."
-            } catch (e: HttpException) {
-                loadErrorMessage.value = "Couldn't load standings. Check your connection and try again."
-            } finally {
-                isLoading.value = false
-                isRefreshing.value = false
             }
+            isLoading.value = false
+            isRefreshing.value = false
         }
     }
 

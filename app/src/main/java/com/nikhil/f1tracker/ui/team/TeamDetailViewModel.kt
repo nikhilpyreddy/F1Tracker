@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
+import com.nikhil.f1tracker.ui.common.syncCatching
 import com.nikhil.f1tracker.ui.common.syncSeasonsCurrentFirst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +16,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import java.time.Year
 import javax.inject.Inject
 
@@ -78,15 +77,10 @@ class TeamDetailViewModel @Inject constructor(
     private suspend fun runSync(block: suspend () -> Unit) {
         isLoading.value = true
         loadErrorMessage.value = null
-        try {
-            block()
-        } catch (e: IOException) {
+        syncCatching(block).onFailure {
             loadErrorMessage.value = "Couldn't load team data. Check your connection and try again."
-        } catch (e: HttpException) {
-            loadErrorMessage.value = "Couldn't load team data. Check your connection and try again."
-        } finally {
-            isLoading.value = false
         }
+        isLoading.value = false
     }
 
     private companion object {

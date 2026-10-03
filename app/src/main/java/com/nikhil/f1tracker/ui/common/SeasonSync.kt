@@ -1,8 +1,5 @@
 package com.nikhil.f1tracker.ui.common
 
-import retrofit2.HttpException
-import java.io.IOException
-
 /**
  * Syncs [currentSeason] first, then backfills the rest of [seasons] best-effort.
  *
@@ -10,6 +7,7 @@ import java.io.IOException
  * shows first. A failure backfilling an older season is swallowed and skipped rather than
  * aborting the whole batch — otherwise a single rate-limited request on, say, four-year-old
  * data would starve the current season of ever being synced (it used to be fetched last).
+ * Backfill failures include malformed responses, not just network errors — see [syncCatching].
  */
 suspend fun syncSeasonsCurrentFirst(
     seasons: List<Int>,
@@ -18,12 +16,7 @@ suspend fun syncSeasonsCurrentFirst(
 ) {
     sync(currentSeason)
     seasons.filter { it != currentSeason }.forEach { year ->
-        try {
-            sync(year)
-        } catch (e: IOException) {
-            // Best-effort backfill; current season already synced above.
-        } catch (e: HttpException) {
-            // Best-effort backfill; current season already synced above.
-        }
+        // Best-effort backfill; current season already synced above.
+        syncCatching { sync(year) }
     }
 }

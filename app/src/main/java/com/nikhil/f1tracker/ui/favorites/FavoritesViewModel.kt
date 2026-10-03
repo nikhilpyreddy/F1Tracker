@@ -7,6 +7,7 @@ import com.nikhil.f1tracker.data.repository.FavoritesRepository
 import com.nikhil.f1tracker.domain.model.FavoriteToggleResult
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_DRIVERS
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_TEAMS
+import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import java.time.Year
 import javax.inject.Inject
 
@@ -87,16 +86,13 @@ class FavoritesViewModel @Inject constructor(
         isLoading.value = true
         loadErrorMessage.value = null
         viewModelScope.launch {
-            try {
+            syncCatching {
                 f1Repository.syncDriverRoster(currentSeason)
                 f1Repository.syncConstructorRoster(currentSeason)
-            } catch (e: IOException) {
+            }.onFailure {
                 loadErrorMessage.value = "Couldn't load drivers and teams. Check your connection and try again."
-            } catch (e: HttpException) {
-                loadErrorMessage.value = "Couldn't load drivers and teams. Check your connection and try again."
-            } finally {
-                isLoading.value = false
             }
+            isLoading.value = false
         }
     }
 

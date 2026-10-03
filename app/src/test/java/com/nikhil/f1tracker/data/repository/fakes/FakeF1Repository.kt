@@ -26,23 +26,37 @@ class FakeF1Repository : F1Repository {
     val syncedDriverStandingSeasons = mutableListOf<Int>()
     val syncedConstructorStandingSeasons = mutableListOf<Int>()
 
+    /** When set, every sync call throws this. */
+    var syncFailure: Throwable? = null
+
+    /** Per-season failures for [syncSeason], checked before [syncFailure]. */
+    val seasonSyncFailures = mutableMapOf<Int, Throwable>()
+
+    private fun throwIfFailing(season: Int? = null) {
+        season?.let { seasonSyncFailures[it] }?.let { throw it }
+        syncFailure?.let { throw it }
+    }
+
     override suspend fun syncSeason(season: Int, forceRefresh: Boolean) {
+        throwIfFailing(season)
         syncedSeasons += season
     }
 
-    override suspend fun syncSchedule(season: Int, forceRefresh: Boolean) = Unit
+    override suspend fun syncSchedule(season: Int, forceRefresh: Boolean) = throwIfFailing()
 
     override suspend fun syncDriverStandings(season: Int, forceRefresh: Boolean) {
+        throwIfFailing()
         syncedDriverStandingSeasons += season
     }
 
     override suspend fun syncConstructorStandings(season: Int, forceRefresh: Boolean) {
+        throwIfFailing()
         syncedConstructorStandingSeasons += season
     }
 
-    override suspend fun syncDriverRoster(season: Int) = Unit
+    override suspend fun syncDriverRoster(season: Int) = throwIfFailing()
 
-    override suspend fun syncConstructorRoster(season: Int) = Unit
+    override suspend fun syncConstructorRoster(season: Int) = throwIfFailing()
 
     override fun getAllDrivers(): Flow<List<DriverEntity>> = allDrivers
 

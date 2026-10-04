@@ -6,7 +6,7 @@ import com.nikhil.f1tracker.domain.stats.StatDetailRace
 import com.nikhil.f1tracker.domain.stats.RaceOutcome
 import com.nikhil.f1tracker.domain.stats.Rate
 
-enum class WeekendTab(val label: String) { CIRCUIT("Circuit"), TRACK("Track"), FORM("Form") }
+enum class WeekendTab(val label: String) { CIRCUIT("Circuit"), TRACK("Track"), STRATEGY("Strategy"), FORM("Form") }
 
 data class WeekendUiState(
     val isLoading: Boolean = true,
@@ -21,7 +21,26 @@ data class WeekendUiState(
     val driverForms: List<DriverFormRow> = emptyList(),
     val headToHeads: List<HeadToHeadRow> = emptyList(),
     val statSheet: StatSheet? = null,
+    /** Podium of the most recent race at this circuit. */
+    val lastPodium: List<ClassificationRow> = emptyList(),
+    val lastRaceSeason: Int? = null,
+    val resultsSheet: ResultsSheet? = null,
 )
+
+/** One driver's line in a race classification. */
+data class ClassificationRow(
+    val driverId: String,
+    val constructorId: String,
+    val driverName: String,
+    val teamName: String,
+    val positionText: String,
+    val grid: Int,
+    val points: Double,
+    val status: String,
+)
+
+/** Full classification of this circuit's race in [season], switchable across [seasons]. */
+data class ResultsSheet(val season: Int, val seasons: List<Int>, val rows: List<ClassificationRow>)
 
 /** An opened circuit stat: the races behind it, with names for the drivers involved. */
 data class StatSheet(

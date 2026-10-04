@@ -44,6 +44,8 @@ fun CircuitTab(
     uiState: WeekendUiState,
     onStatClick: (CircuitStat) -> Unit,
     onCircuitHistoryClick: () -> Unit,
+    onDriverClick: (String) -> Unit,
+    onOpenResults: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val stats = uiState.circuitStats
@@ -52,6 +54,10 @@ fun CircuitTab(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        val lastSeason = uiState.lastRaceSeason
+        if (lastSeason != null && uiState.lastPodium.isNotEmpty()) {
+            item { LastPodiumCard(lastSeason, uiState.lastPodium, onDriverClick, onOpenResults) }
+        }
         item {
             Text(
                 text = stats?.let { "Last ${it.raceCount} races here (${it.seasonRange()}) · tap a stat for the races" }

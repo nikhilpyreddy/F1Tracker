@@ -12,7 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.domain.stats.CircuitStat
+import com.nikhil.f1tracker.ui.weekend.strategy.StrategyTab
 import com.nikhil.f1tracker.ui.weekend.track.TrackTab
 
 @Composable
@@ -42,10 +43,23 @@ fun WeekendRoute(
         onBackClick = onBackClick,
         onTabSelected = viewModel::selectTab,
         onStatClick = viewModel::openStat,
+        onOpenResults = { viewModel.openResults() },
         onCircuitHistoryClick = { onCircuitHistoryClick(uiState.circuitId) },
         onDriverClick = onDriverClick,
         onRetry = viewModel::retry,
     )
+    uiState.resultsSheet?.let { sheet ->
+        RaceResultsSheet(
+            sheet = sheet,
+            raceName = uiState.raceName,
+            onSeasonSelected = viewModel::openResults,
+            onDriverClick = { driverId ->
+                viewModel.closeResults()
+                onDriverClick(driverId)
+            },
+            onDismiss = viewModel::closeResults,
+        )
+    }
     uiState.statSheet?.let { sheet ->
         StatDetailSheet(
             sheet = sheet,
@@ -65,6 +79,7 @@ fun WeekendScreen(
     onBackClick: () -> Unit,
     onTabSelected: (WeekendTab) -> Unit,
     onStatClick: (CircuitStat) -> Unit,
+    onOpenResults: () -> Unit,
     onCircuitHistoryClick: () -> Unit,
     onDriverClick: (String) -> Unit,
     onRetry: () -> Unit,
@@ -97,7 +112,7 @@ fun WeekendScreen(
             // Cached data stays visible while a sync runs; a first-time circuit backfill can take a while.
             if (uiState.isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             uiState.loadErrorMessage?.let { ErrorBanner(it, onRetry) }
-            PrimaryTabRow(selectedTabIndex = uiState.selectedTab.ordinal) {
+            PrimaryScrollableTabRow(selectedTabIndex = uiState.selectedTab.ordinal, edgePadding = 0.dp) {
                 WeekendTab.entries.forEach { tab ->
                     Tab(
                         selected = tab == uiState.selectedTab,
@@ -107,8 +122,9 @@ fun WeekendScreen(
                 }
             }
             when (uiState.selectedTab) {
-                WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick)
+                WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick, onDriverClick, onOpenResults)
                 WeekendTab.TRACK -> TrackTab()
+                WeekendTab.STRATEGY -> StrategyTab()
                 WeekendTab.FORM -> FormTab(uiState, onDriverClick)
             }
         }

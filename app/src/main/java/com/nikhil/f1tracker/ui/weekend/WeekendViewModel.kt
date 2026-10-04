@@ -41,6 +41,7 @@ class WeekendViewModel @Inject constructor(
     private val loadErrorMessage = MutableStateFlow<String?>(null)
     private val selectedTab = MutableStateFlow(WeekendTab.CIRCUIT)
     private val openStat = MutableStateFlow<CircuitStat?>(null)
+    private val resultsSeason = MutableStateFlow<Int?>(null)
 
     private val header = combine(
         f1Repository.getRacesForSeason(season).map { races -> races.find { it.round == round } },
@@ -59,8 +60,8 @@ class WeekendViewModel @Inject constructor(
         Data(atCircuit, seasonResults, n)
     }
 
-    private val status = combine(isLoading, loadErrorMessage, selectedTab, openStat) { loading, error, tab, stat ->
-        Status(loading, error, tab, stat)
+    private val status = combine(isLoading, loadErrorMessage, selectedTab, openStat, resultsSeason) { loading, error, tab, stat, season ->
+        Status(loading, error, tab, stat, season)
     }
 
     val uiState: StateFlow<WeekendUiState> = combine(header, data, status) { header, data, status ->
@@ -81,6 +82,11 @@ class WeekendViewModel @Inject constructor(
                 val driverIds = races.flatMap { race -> race.lines.map { it.driverId } }.toSet()
                 StatSheet(stat, races, driverIds.associateWith { data.names.driver(it) })
             },
+            lastPodium = classification(data, latestSeason(data))?.take(PODIUM_PLACES).orEmpty(),
+            lastRaceSeason = latestSeason(data),
+            resultsSheet = status.resultsSeason?.let { season ->
+                ResultsSheet(season, data.atCircuit.map { it.season }.distinct().sortedDescending(), classification(data, season).orEmpty())
+            },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), WeekendUiState())
 
@@ -98,6 +104,15 @@ class WeekendViewModel @Inject constructor(
 
     fun closeStat() {
         openStat.value = null
+    }
+
+    /** Opens the full classification; defaults to the most recent race here. */
+    fun openResults(season: Int? = null) {
+        resultsSeason.value = season ?: uiState.value.lastRaceSeason
+    }
+
+    fun closeResults() {
+        resultsSeason.value = null
     }
 
     fun retry() {
@@ -129,11 +144,29 @@ class WeekendViewModel @Inject constructor(
         val loadErrorMessage: String?,
         val selectedTab: WeekendTab,
         val openStat: CircuitStat?,
+        val resultsSeason: Int?,
     )
+
+    private fun latestSeason(data: Data): Int? = data.atCircuit.maxOfOrNull { it.season }
+
+    /** Official order for [season]'s race here (latest round if a season had two). */
+    private fun classification(data: Data, season: Int?): List<ClassificationRow>? {
+        val race = data.atCircuit.filter { it.season == season }
+        val round = race.maxOfOrNull { it.round } ?: return null
+        return race.filter { it.round == round }
+            .sortedBy { it.position ?: Int.MAX_VALUE }
+            .map {
+                ClassificationRow(
+                    it.driverId, it.constructorId, data.names.driver(it.driverId), data.names.team(it.constructorId),
+                    it.positionText, it.grid, it.points, it.status,
+                )
+            }
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val RECENT_RACES = 5
+        const val PODIUM_PLACES = 3
 
         fun DriverForm.toRow(names: Names) = DriverFormRow(
             driverId = driverId,

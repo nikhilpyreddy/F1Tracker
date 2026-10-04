@@ -24,15 +24,17 @@ domain/model   small shared models and constants (seasons, identities, circuit t
 | `domain/stats` | `CircuitStats` and `CircuitStatDetails`, `DriverForm` (form and teammate head-to-head), `QualifyingStats`, `TrackProfile`, `StrategySummary`, `Rate` |
 | `ui/common` | `SyncCatching`, `SeasonSync`, `LineChart`, `PositionChart` |
 | `ui/common/identity` | `LocalF1Identities` (provided once in `F1App`), `DriverAvatar`, `CodeBadge`, `TeamDot`, `teamStripe`, `StandingRow`, `FractionBar`, `SplitBar`, `FinishBadge`, `FormStrip`, `finishColor` |
-| `ui/weekend` | The Race Weekend screen. Tabs: Circuit, Qualifying, Track, Strategy, Form. Each newer tab has its own ViewModel in a sub-package (`qualifying/`, `track/`, `strategy/`), created when the tab first shows, so its data loads lazily |
-| `ui/*` | Home (calendar), Standings, Compare, Favorites, Driver detail (Seasons / Race by race), Team detail, Grand Prix detail (driver history at a circuit) |
+| `ui/weekend` | The Race Weekend screen. Tabs: Circuit (base rates, last podium and full results, driver history here), Qualifying, Track, Strategy, Form. It opens on the most useful tab: Strategy after the race, Qualifying once qualifying has run, otherwise Circuit. Each newer tab has its own ViewModel in a sub-package (`qualifying/`, `track/`, `strategy/`), created when the tab first shows, so its data loads lazily |
+| `ui/*` | Home (next race card with Central-time sessions, favourites, ⋮ menu), Races (season list with podiums), Standings (with title maths and a Compare action), Compare and Favorites (pushed screens), Driver detail (Seasons / Race by race, "Compare with…"), Team detail |
+| `work` | `NextRacePrefetchWorker`: WorkManager + Hilt job every 12 h on unmetered Wi-Fi with battery not low. Warms the next race's caches so the Weekend tabs open instantly. Scheduled in `F1TrackerApplication`; the default WorkManager initializer is removed in the manifest |
+| `domain/model` | Also `AppTime` (all display times in `America/Chicago`) and `RaceSchedule` (race status from actual start times) |
 | `di` | Hilt modules. `NetworkModule` builds one base `OkHttpClient` and per-API clients (`@JolpicaClient`, `@OpenF1Client`) |
 
 ## Navigation (`ui/navigation/F1App.kt`)
 
-- **Bottom bar:** Home, Standings, Compare, Favorites.
+- **Bottom bar:** Home, Races, Standings.
 - **Pushed screens:** `weekend/{season}/{round}/{circuitId}`, `driverDetail/{driverId}`,
-  `teamDetail/{constructorId}`, `grandPrixDetail/{circuitId}?driverId=`.
+  `teamDetail/{constructorId}`, `favorites`, `compare?first={driverId}`.
 - **Arguments:** tab ViewModels read the route arguments from the shared `SavedStateHandle`.
 
 ## Conventions worth keeping
@@ -47,3 +49,6 @@ domain/model   small shared models and constants (seasons, identities, circuit t
 - **New Room table:** bump `F1Database.version`; destructive fallback rebuilds the database.
 - **Lists of "current" drivers or teams:** use `getSeasonDrivers`/`getSeasonConstructors`, which fall
   back to the previous season before round 1. Don't use `getAll*`.
+- **Times:** format every displayed date/time with `domain/model/AppTime` (US Central). Never format
+  raw Jolpica UTC strings or use the device time zone. Weather day labels are the exception: they are
+  the circuit's local days.

@@ -8,6 +8,7 @@ import com.nikhil.f1tracker.data.local.dao.DriverStandingDao
 import com.nikhil.f1tracker.data.local.dao.RaceDao
 import com.nikhil.f1tracker.data.local.dao.ResultDao
 import com.nikhil.f1tracker.data.mapper.toEntity
+import com.nikhil.f1tracker.data.remote.JOLPICA_MAX_PAGE_SIZE
 import com.nikhil.f1tracker.data.remote.JolpicaApiService
 import com.nikhil.f1tracker.data.remote.dto.RaceDto
 import java.time.Clock
@@ -37,8 +38,8 @@ class F1RepositoryImpl @Inject constructor(
     override suspend fun syncSeason(season: Int, forceRefresh: Boolean) {
         if (!forceRefresh && isCompletedSeasonFullyCached(season)) return
         syncIfNeeded("season:$season", forceRefresh) {
-            val races = fetchAndCacheSchedule(season)
-            races.forEach { race -> syncRaceResults(season, race.round.toInt()) }
+            fetchAndCacheSchedule(season)
+            syncSeasonResults(season)
             syncDriverStandings(season, forceRefresh = true)
             syncConstructorStandings(season, forceRefresh = true)
         }
@@ -66,13 +67,43 @@ class F1RepositoryImpl @Inject constructor(
         return schedule
     }
 
-    private suspend fun syncRaceResults(season: Int, round: Int) {
-        val race = api.getRaceResults(season, round).mrData.raceTable.races.firstOrNull() ?: return
-        val results = race.results
+    // One request per 100 result rows (~5 per season) rather than one per round (~25), which is
+    // what kept multi-season syncs bumping into Jolpica's 500 requests/hour limit.
+    private suspend fun syncSeasonResults(season: Int) {
+        var offset = 0
+        do {
+            val page = api.getSeasonResults(season, offset).mrData
+            cacheRaceResults(page.raceTable.races)
+            offset += JOLPICA_MAX_PAGE_SIZE
+        } while (offset < page.total.toInt())
+    }
+
+    override suspend fun syncCircuitHistory(circuitId: String, sinceSeason: Int) =
+        syncIfNeeded("circuitHistory:$circuitId", forceRefresh = false) {
+            val currentSeason = Year.now(clock).value
+            val hostedSeasons = api.getCircuitSeasons(circuitId).mrData.seasonTable.seasons
+                .mapNotNull { it.season.toIntOrNull() }
+                .filter { it in sinceSeason until currentSeason }
+            hostedSeasons
+                .filter { season -> resultDao.countAtCircuitInSeason(season, circuitId) == 0 }
+                .forEach { season ->
+                    val races = api.getCircuitResults(season, circuitId).mrData.raceTable.races
+                    circuitDao.upsertAll(races.map { it.circuit.toEntity() }.distinctBy { it.circuitId })
+                    raceDao.upsertAll(races.map { it.toEntity() })
+                    cacheRaceResults(races)
+                }
+        }
+
+    // A results page can end part-way through a race, so each race's rows are keyed by its own
+    // season/round rather than assuming one race per response.
+    private suspend fun cacheRaceResults(races: List<RaceDto>) {
+        val results = races.flatMap { race -> race.results.map { race to it } }
         if (results.isEmpty()) return
-        driverDao.upsertAll(results.map { it.driver.toEntity() }.distinctBy { it.driverId })
-        constructorDao.upsertAll(results.map { it.constructor.toEntity() }.distinctBy { it.constructorId })
-        resultDao.upsertAll(results.map { it.toEntity(season, round) })
+        driverDao.upsertAll(results.map { (_, result) -> result.driver.toEntity() }.distinctBy { it.driverId })
+        constructorDao.upsertAll(
+            results.map { (_, result) -> result.constructor.toEntity() }.distinctBy { it.constructorId },
+        )
+        resultDao.upsertAll(results.map { (race, result) -> result.toEntity(race.season.toInt(), race.round.toInt()) })
     }
 
     override suspend fun syncDriverStandings(season: Int, forceRefresh: Boolean) =
@@ -128,6 +159,8 @@ class F1RepositoryImpl @Inject constructor(
 
     override fun getCircuit(circuitId: String) = circuitDao.getById(circuitId)
 
+    override fun getResultsForSeason(season: Int) = resultDao.getBySeason(season)
+
     override fun getResultsForDriver(driverId: String) = resultDao.getByDriver(driverId)
 
     override fun getResultsForDriverAndSeason(driverId: String, season: Int) =
@@ -138,6 +171,8 @@ class F1RepositoryImpl @Inject constructor(
 
     override fun getResultsForDriverAtCircuit(driverId: String, circuitId: String) =
         resultDao.getByDriverAndCircuit(driverId, circuitId)
+
+    override fun getResultsAtCircuit(circuitId: String) = resultDao.getByCircuit(circuitId)
 
     override fun getDriverStandingsForSeason(season: Int) = driverStandingDao.getBySeason(season)
 

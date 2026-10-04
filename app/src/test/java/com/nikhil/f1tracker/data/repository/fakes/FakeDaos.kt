@@ -68,6 +68,8 @@ class FakeResultDao(private val raceDao: FakeRaceDao) : ResultDao {
     }
     override fun getByRace(season: Int, round: Int): Flow<List<ResultEntity>> =
         flowOf(upserted.filter { it.season == season && it.round == round })
+    override fun getBySeason(season: Int): Flow<List<ResultEntity>> =
+        flowOf(upserted.filter { it.season == season })
     override suspend fun getRoundsWithResults(season: Int): List<Int> =
         upserted.filter { it.season == season }.map { it.round }.distinct()
     override fun getByDriver(driverId: String): Flow<List<ResultEntity>> =
@@ -76,6 +78,14 @@ class FakeResultDao(private val raceDao: FakeRaceDao) : ResultDao {
         flowOf(upserted.filter { it.driverId == driverId && it.season == season })
     override fun getByConstructorAndSeason(constructorId: String, season: Int): Flow<List<ResultEntity>> =
         flowOf(upserted.filter { it.constructorId == constructorId && it.season == season })
+    override suspend fun countAtCircuitInSeason(season: Int, circuitId: String): Int {
+        val roundsAtCircuit = raceDao.upserted.filter { it.season == season && it.circuitId == circuitId }.map { it.round }
+        return upserted.count { it.season == season && it.round in roundsAtCircuit }
+    }
+    override fun getByCircuit(circuitId: String): Flow<List<ResultEntity>> {
+        val roundsAtCircuit = raceDao.upserted.filter { it.circuitId == circuitId }.map { it.season to it.round }.toSet()
+        return flowOf(upserted.filter { (it.season to it.round) in roundsAtCircuit })
+    }
     override fun getByDriverAndCircuit(driverId: String, circuitId: String): Flow<List<ResultEntity>> {
         val roundsAtCircuit = raceDao.upserted
             .filter { it.circuitId == circuitId }

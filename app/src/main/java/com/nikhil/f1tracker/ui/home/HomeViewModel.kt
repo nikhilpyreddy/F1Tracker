@@ -76,7 +76,7 @@ class HomeViewModel @Inject constructor(
             isRefreshing = status.isRefreshing,
             loadErrorMessage = status.loadErrorMessage,
             nextRace = calendar.find { it.status == RaceStatus.NEXT }
-                ?.let { UpcomingRace(raceName = it.raceName, date = it.date, round = it.round, circuitId = it.circuitId) },
+                ?.let { UpcomingRace(it.raceName, it.date, it.round, it.circuitId, it.season) },
             calendar = calendar,
             favoriteDrivers = races.driverStandings
                 .filter { it.driverId in entities.selection.driverIds }
@@ -99,7 +99,7 @@ class HomeViewModel @Inject constructor(
                 race.isOnOrAfter(today) -> RaceStatus.UPCOMING
                 else -> RaceStatus.COMPLETED
             }
-            CalendarRace(race.round, race.raceName, race.date, race.circuitId, status)
+            CalendarRace(race.round, race.raceName, race.date, race.circuitId, status, race.season)
         }
     }
 

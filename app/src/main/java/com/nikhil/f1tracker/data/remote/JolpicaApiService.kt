@@ -5,11 +5,15 @@ import com.nikhil.f1tracker.data.remote.dto.ConstructorTableResponseDto
 import com.nikhil.f1tracker.data.remote.dto.DriverStandingsResponseDto
 import com.nikhil.f1tracker.data.remote.dto.DriverTableResponseDto
 import com.nikhil.f1tracker.data.remote.dto.RaceResponseDto
+import com.nikhil.f1tracker.data.remote.dto.SeasonTableResponseDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 private const val STANDINGS_PAGE_LIMIT = 100
+
+/** Jolpica caps `limit` at 100; larger values are silently clamped. */
+const val JOLPICA_MAX_PAGE_SIZE = 100
 
 interface JolpicaApiService {
 
@@ -19,10 +23,24 @@ interface JolpicaApiService {
         @Query("limit") limit: Int = STANDINGS_PAGE_LIMIT,
     ): RaceResponseDto
 
-    @GET("{season}/{round}/results.json")
-    suspend fun getRaceResults(
+    @GET("{season}/results.json")
+    suspend fun getSeasonResults(
         @Path("season") season: Int,
-        @Path("round") round: Int,
+        @Query("offset") offset: Int,
+        @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
+    ): RaceResponseDto
+
+    @GET("circuits/{circuitId}/seasons.json")
+    suspend fun getCircuitSeasons(
+        @Path("circuitId") circuitId: String,
+        @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
+    ): SeasonTableResponseDto
+
+    @GET("{season}/circuits/{circuitId}/results.json")
+    suspend fun getCircuitResults(
+        @Path("season") season: Int,
+        @Path("circuitId") circuitId: String,
+        @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
     ): RaceResponseDto
 
     @GET("{season}/drivers.json")

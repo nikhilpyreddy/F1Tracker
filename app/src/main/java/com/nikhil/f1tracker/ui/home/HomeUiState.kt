@@ -15,6 +15,7 @@ data class UpcomingRace(
     val date: String,
     val round: Int,
     val circuitId: String,
+    val season: Int,
 )
 
 enum class RaceStatus { COMPLETED, NEXT, UPCOMING }
@@ -25,6 +26,7 @@ data class CalendarRace(
     val date: String,
     val circuitId: String,
     val status: RaceStatus,
+    val season: Int,
 )
 
 data class FavoriteDriverStanding(

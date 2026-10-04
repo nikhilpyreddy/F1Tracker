@@ -2,6 +2,8 @@ package com.nikhil.f1tracker.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.nikhil.f1tracker.data.remote.JolpicaApiService
+import com.nikhil.f1tracker.data.remote.RequestSpacer
+import java.time.Duration
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,6 +17,9 @@ import retrofit2.Retrofit
 import javax.inject.Singleton
 
 private const val USER_AGENT = "F1Tracker/1.0 (personal-use Android app)"
+
+// Jolpica allows 4 requests/second.
+private val JOLPICA_MIN_REQUEST_INTERVAL: Duration = Duration.ofMillis(250)
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -43,6 +48,7 @@ object NetworkModule {
             level = HttpLoggingInterceptor.Level.BASIC
         }
         return OkHttpClient.Builder()
+            .addInterceptor(RequestSpacer(JOLPICA_MIN_REQUEST_INTERVAL).asInterceptor())
             .addInterceptor(userAgentInterceptor)
             .addInterceptor(loggingInterceptor)
             .build()

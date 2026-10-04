@@ -30,6 +30,7 @@ import com.nikhil.f1tracker.ui.grandprix.GrandPrixDetailRoute
 import com.nikhil.f1tracker.ui.home.HomeRoute
 import com.nikhil.f1tracker.ui.standings.StandingsRoute
 import com.nikhil.f1tracker.ui.team.TeamDetailRoute
+import com.nikhil.f1tracker.ui.weekend.WeekendRoute
 
 private object F1Destinations {
     const val HOME = "home"
@@ -39,9 +40,11 @@ private object F1Destinations {
     const val DRIVER_DETAIL = "driverDetail/{driverId}"
     const val TEAM_DETAIL = "teamDetail/{constructorId}"
     const val GRAND_PRIX_DETAIL = "grandPrixDetail/{circuitId}?driverId={driverId}"
+    const val WEEKEND = "weekend/{season}/{round}/{circuitId}"
 
     fun driverDetail(driverId: String) = "driverDetail/$driverId"
     fun teamDetail(constructorId: String) = "teamDetail/$constructorId"
+    fun weekend(season: Int, round: Int, circuitId: String) = "weekend/$season/$round/$circuitId"
     fun grandPrixDetail(circuitId: String, driverId: String? = null) =
         if (driverId == null) "grandPrixDetail/$circuitId" else "grandPrixDetail/$circuitId?driverId=$driverId"
 }
@@ -101,7 +104,9 @@ fun F1App(navController: NavHostController = rememberNavController()) {
                 HomeRoute(
                     onDriverClick = { driverId -> navController.navigate(F1Destinations.driverDetail(driverId)) },
                     onTeamClick = { constructorId -> navController.navigate(F1Destinations.teamDetail(constructorId)) },
-                    onGrandPrixClick = { circuitId -> navController.navigate(F1Destinations.grandPrixDetail(circuitId)) },
+                    onRaceClick = { season, round, circuitId ->
+                        navController.navigate(F1Destinations.weekend(season, round, circuitId))
+                    },
                 )
             }
             composable(F1Destinations.STANDINGS) {
@@ -133,6 +138,21 @@ fun F1App(navController: NavHostController = rememberNavController()) {
                 arguments = listOf(navArgument("constructorId") { type = NavType.StringType }),
             ) {
                 TeamDetailRoute(onBackClick = { navController.navigateUp() })
+            }
+            composable(
+                route = F1Destinations.WEEKEND,
+                arguments = listOf(
+                    navArgument("season") { type = NavType.IntType },
+                    navArgument("round") { type = NavType.IntType },
+                    navArgument("circuitId") { type = NavType.StringType },
+                ),
+            ) {
+                WeekendRoute(
+                    onBackClick = { navController.navigateUp() },
+                    onCircuitHistoryClick = { circuitId ->
+                        navController.navigate(F1Destinations.grandPrixDetail(circuitId))
+                    },
+                )
             }
             composable(
                 route = F1Destinations.GRAND_PRIX_DETAIL,

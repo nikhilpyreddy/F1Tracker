@@ -6,7 +6,7 @@ import org.junit.Test
 class CalendarWindowTest {
 
     private fun race(round: Int, status: RaceStatus) =
-        CalendarRace(round, "Race $round", "2026-01-01", "circuit$round", status)
+        CalendarRace(round, "Race $round", "2026-01-01", "circuit$round", status, 2026)
 
     private fun season(nextRound: Int?, size: Int = 10) = (1..size).map { round ->
         when {

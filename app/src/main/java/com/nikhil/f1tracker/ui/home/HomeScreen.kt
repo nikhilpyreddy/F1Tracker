@@ -35,7 +35,7 @@ import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 fun HomeRoute(
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
-    onGrandPrixClick: (String) -> Unit,
+    onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -43,7 +43,7 @@ fun HomeRoute(
         uiState = uiState,
         onDriverClick = onDriverClick,
         onTeamClick = onTeamClick,
-        onGrandPrixClick = onGrandPrixClick,
+        onRaceClick = onRaceClick,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retrySync,
     )
@@ -55,7 +55,7 @@ fun HomeScreen(
     uiState: HomeUiState,
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
-    onGrandPrixClick: (String) -> Unit,
+    onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -79,7 +79,7 @@ fun HomeScreen(
                 onRefresh = onRefresh,
                 modifier = Modifier.padding(innerPadding).fillMaxSize(),
             ) {
-                HomeContent(uiState, onDriverClick, onTeamClick, onGrandPrixClick)
+                HomeContent(uiState, onDriverClick, onTeamClick, onRaceClick)
             }
         }
     }
@@ -90,17 +90,17 @@ private fun HomeContent(
     uiState: HomeUiState,
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
-    onGrandPrixClick: (String) -> Unit,
+    onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isCalendarExpanded by rememberSaveable { mutableStateOf(false) }
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        item { NextRaceCard(uiState.nextRace, onClick = onGrandPrixClick) }
+        item { NextRaceCard(uiState.nextRace, onClick = { onRaceClick(it.season, it.round, it.circuitId) }) }
         calendarSection(
             calendar = uiState.calendar,
             isExpanded = isCalendarExpanded,
             onToggleExpanded = { isCalendarExpanded = !isCalendarExpanded },
-            onRaceClick = onGrandPrixClick,
+            onRaceClick = { onRaceClick(it.season, it.round, it.circuitId) },
         )
         if (uiState.favoriteDrivers.isNotEmpty()) {
             item { SectionHeader("Favorite drivers") }
@@ -136,10 +136,10 @@ private fun HomeContent(
 }
 
 @Composable
-private fun NextRaceCard(nextRace: UpcomingRace?, onClick: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun NextRaceCard(nextRace: UpcomingRace?, onClick: (UpcomingRace) -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth().padding(16.dp)
-            .let { if (nextRace != null) it.clickable { onClick(nextRace.circuitId) } else it },
+            .let { if (nextRace != null) it.clickable { onClick(nextRace) } else it },
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Next race", style = MaterialTheme.typography.labelLarge)
@@ -176,11 +176,11 @@ private fun HomeScreenPreview() {
         HomeScreen(
             uiState = HomeUiState(
                 isLoading = false,
-                nextRace = UpcomingRace("Bahrain Grand Prix", "2026-03-08", 1, "bahrain"),
+                nextRace = UpcomingRace("Bahrain Grand Prix", "2026-03-08", 1, "bahrain", 2026),
                 calendar = listOf(
-                    CalendarRace(1, "Australian Grand Prix", "2026-03-01", "albert_park", RaceStatus.COMPLETED),
-                    CalendarRace(2, "Bahrain Grand Prix", "2026-03-08", "bahrain", RaceStatus.NEXT),
-                    CalendarRace(3, "Saudi Arabian Grand Prix", "2026-03-15", "jeddah", RaceStatus.UPCOMING),
+                    CalendarRace(1, "Australian Grand Prix", "2026-03-01", "albert_park", RaceStatus.COMPLETED, 2026),
+                    CalendarRace(2, "Bahrain Grand Prix", "2026-03-08", "bahrain", RaceStatus.NEXT, 2026),
+                    CalendarRace(3, "Saudi Arabian Grand Prix", "2026-03-15", "jeddah", RaceStatus.UPCOMING, 2026),
                 ),
                 favoriteDrivers = listOf(
                     FavoriteDriverStanding("max_verstappen", "Max Verstappen", "Red Bull", 1, 437.0),
@@ -191,7 +191,7 @@ private fun HomeScreenPreview() {
             ),
             onDriverClick = {},
             onTeamClick = {},
-            onGrandPrixClick = {},
+            onRaceClick = { _, _, _ -> },
             onRefresh = {},
             onRetry = {},
         )

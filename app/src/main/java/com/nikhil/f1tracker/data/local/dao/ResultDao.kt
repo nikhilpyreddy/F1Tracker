@@ -15,6 +15,9 @@ interface ResultDao {
     @Query("SELECT * FROM results WHERE season = :season AND round = :round ORDER BY position")
     fun getByRace(season: Int, round: Int): Flow<List<ResultEntity>>
 
+    @Query("SELECT * FROM results WHERE season = :season ORDER BY round, position")
+    fun getBySeason(season: Int): Flow<List<ResultEntity>>
+
     @Query("SELECT DISTINCT round FROM results WHERE season = :season")
     suspend fun getRoundsWithResults(season: Int): List<Int>
 
@@ -26,6 +29,25 @@ interface ResultDao {
 
     @Query("SELECT * FROM results WHERE constructorId = :constructorId AND season = :season ORDER BY round")
     fun getByConstructorAndSeason(constructorId: String, season: Int): Flow<List<ResultEntity>>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM results
+        INNER JOIN races ON results.season = races.season AND results.round = races.round
+        WHERE races.season = :season AND races.circuitId = :circuitId
+        """
+    )
+    suspend fun countAtCircuitInSeason(season: Int, circuitId: String): Int
+
+    @Query(
+        """
+        SELECT results.* FROM results
+        INNER JOIN races ON results.season = races.season AND results.round = races.round
+        WHERE races.circuitId = :circuitId
+        ORDER BY results.season DESC, results.round DESC
+        """
+    )
+    fun getByCircuit(circuitId: String): Flow<List<ResultEntity>>
 
     @Query(
         """

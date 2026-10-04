@@ -108,8 +108,8 @@ class F1RepositoryImplTest {
             schedule = RaceResponseDto(
                 RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(scheduleRace))),
             ),
-            resultsByRound = mapOf(
-                1 to RaceResponseDto(RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(resultsRace)))),
+            seasonResultPages = mapOf(
+                0 to RaceResponseDto(RaceMrDataDto("100", "0", "1", RaceTableDto(races = listOf(resultsRace)))),
             ),
             driverStandings = DriverStandingsResponseDto(
                 DriverStandingsMrDataDto(
@@ -180,7 +180,7 @@ class F1RepositoryImplTest {
         )
         val api = FakeJolpicaApiService(
             schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
-            resultsByRound = emptyMap(),
+            seasonResultPages = emptyMap(),
             driverStandings = DriverStandingsResponseDto(
                 DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2023")),
             ),
@@ -221,9 +221,9 @@ class F1RepositoryImplTest {
         )
         val api = FakeJolpicaApiService(
             schedule = RaceResponseDto(RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(scheduleRace)))),
-            resultsByRound = mapOf(
-                1 to RaceResponseDto(
-                    RaceMrDataDto("30", "0", "1", RaceTableDto(races = listOf(scheduleRace))),
+            seasonResultPages = mapOf(
+                0 to RaceResponseDto(
+                    RaceMrDataDto("100", "0", "1", RaceTableDto(races = listOf(scheduleRace))),
                 ),
             ),
             driverStandings = DriverStandingsResponseDto(
@@ -276,7 +276,7 @@ class F1RepositoryImplTest {
         val repository = buildRepository(
             FakeJolpicaApiService(
                 schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
-                resultsByRound = emptyMap(),
+                seasonResultPages = emptyMap(),
                 driverStandings = DriverStandingsResponseDto(
                     DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2023")),
                 ),
@@ -304,7 +304,7 @@ class F1RepositoryImplTest {
         val secondDriver = driver.copy(driverId = "norris", givenName = "Lando", familyName = "Norris")
         val api = FakeJolpicaApiService(
             schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
-            resultsByRound = emptyMap(),
+            seasonResultPages = emptyMap(),
             driverStandings = DriverStandingsResponseDto(
                 DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2099")),
             ),
@@ -332,7 +332,7 @@ class F1RepositoryImplTest {
         val secondConstructor = constructor.copy(constructorId = "mclaren", name = "McLaren")
         val api = FakeJolpicaApiService(
             schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
-            resultsByRound = emptyMap(),
+            seasonResultPages = emptyMap(),
             driverStandings = DriverStandingsResponseDto(
                 DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2099")),
             ),
@@ -402,9 +402,134 @@ class F1RepositoryImplTest {
         assertEquals(2, api.driverStandingsCallCount)
     }
 
+    @Test
+    fun `syncSeason fetches results a page at a time until the total is reached`() = runTest {
+        // Arrange
+        val firstPage = raceWithResults(season = 2099, round = 1, circuitId = "bahrain", "max_verstappen")
+        val secondPage = raceWithResults(season = 2099, round = 2, circuitId = "jeddah", "max_verstappen")
+        val api = apiWith(
+            seasonResultPages = mapOf(
+                0 to racesResponse(total = 150, firstPage),
+                100 to racesResponse(total = 150, secondPage),
+            ),
+        )
+        val repository = buildRepository(api)
+
+        // Act
+        repository.syncSeason(2099)
+
+        // Assert
+        assertEquals(listOf(0, 100), api.seasonResultOffsetsRequested)
+        assertEquals(listOf(1, 2), resultDao.upserted.map { it.round }.sorted())
+    }
+
+    @Test
+    fun `syncCircuitHistory fetches only past seasons the circuit hosted within the window`() = runTest {
+        // Arrange
+        val api = apiWith(
+            circuitSeasons = mapOf("marina_bay" to listOf(2010, 2019, 2023, 2024, 2026)),
+            circuitResults = mapOf(
+                (2019 to "marina_bay") to racesResponse(total = 1, raceWithResults(2019, 15, "marina_bay", "vettel")),
+                (2023 to "marina_bay") to racesResponse(total = 1, raceWithResults(2023, 16, "marina_bay", "sainz")),
+                (2024 to "marina_bay") to racesResponse(total = 1, raceWithResults(2024, 18, "marina_bay", "norris")),
+            ),
+        )
+        val repository = buildRepository(api, MutableClock(Instant.parse("2026-10-03T00:00:00Z")))
+
+        // Act
+        repository.syncCircuitHistory("marina_bay", sinceSeason = 2016)
+
+        // Assert
+        assertEquals(listOf(2019, 2023, 2024), api.circuitResultSeasonsRequested)
+        assertEquals(3, resultDao.upserted.size)
+        assertEquals(setOf("marina_bay"), raceDao.upserted.map { it.circuitId }.toSet())
+    }
+
+    @Test
+    fun `syncCircuitHistory skips seasons whose results at that circuit are already cached`() = runTest {
+        // Arrange
+        raceDao.upserted += RaceEntity(2023, 16, "Singapore Grand Prix", "marina_bay", "2023-09-17", null)
+        resultDao.upserted += ResultEntity(
+            season = 2023, round = 16, driverId = "sainz", constructorId = "ferrari",
+            position = 1, positionText = "1", points = 25.0, grid = 1, laps = 62, status = "Finished",
+            finishTimeMillis = null, fastestLapRank = null, fastestLapTime = null,
+        )
+        val api = apiWith(circuitSeasons = mapOf("marina_bay" to listOf(2023, 2024)))
+        val repository = buildRepository(api, MutableClock(Instant.parse("2026-10-03T00:00:00Z")))
+
+        // Act
+        repository.syncCircuitHistory("marina_bay", sinceSeason = 2016)
+
+        // Assert
+        assertEquals(listOf(2024), api.circuitResultSeasonsRequested)
+    }
+
+    @Test
+    fun `getResultsAtCircuit only returns results from races at that circuit`() = runTest {
+        // Arrange
+        raceDao.upserted += RaceEntity(2023, 1, "Bahrain Grand Prix", "bahrain", "2023-03-05", null)
+        raceDao.upserted += RaceEntity(2023, 2, "Saudi Arabian Grand Prix", "jeddah", "2023-03-19", null)
+        listOf(1, 2).forEach { round ->
+            resultDao.upserted += ResultEntity(
+                season = 2023, round = round, driverId = "max_verstappen", constructorId = "red_bull",
+                position = 1, positionText = "1", points = 25.0, grid = 1, laps = 57, status = "Finished",
+                finishTimeMillis = null, fastestLapRank = null, fastestLapTime = null,
+            )
+        }
+        val repository = buildRepository(apiWith())
+
+        // Act
+        val results = repository.getResultsAtCircuit("bahrain").first()
+
+        // Assert
+        assertEquals(listOf(1), results.map { it.round })
+    }
+
+    private fun raceWithResults(season: Int, round: Int, circuitId: String, vararg driverIds: String) = RaceDto(
+        season = season.toString(),
+        round = round.toString(),
+        raceName = "Race $round",
+        circuit = circuit.copy(circuitId = circuitId),
+        date = "$season-01-01",
+        results = driverIds.mapIndexed { index, driverId ->
+            ResultDto(
+                position = "${index + 1}",
+                positionText = "${index + 1}",
+                points = "0",
+                driver = driver.copy(driverId = driverId),
+                constructor = constructor,
+                grid = "${index + 1}",
+                laps = "50",
+                status = "Finished",
+            )
+        },
+    )
+
+    private fun racesResponse(total: Int, vararg races: RaceDto) =
+        RaceResponseDto(RaceMrDataDto("100", "0", total.toString(), RaceTableDto(races = races.toList())))
+
+    private fun apiWith(
+        seasonResultPages: Map<Int, RaceResponseDto> = emptyMap(),
+        circuitSeasons: Map<String, List<Int>> = emptyMap(),
+        circuitResults: Map<Pair<Int, String>, RaceResponseDto> = emptyMap(),
+    ) = FakeJolpicaApiService(
+        schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
+        seasonResultPages = seasonResultPages,
+        driverStandings = DriverStandingsResponseDto(
+            DriverStandingsMrDataDto("30", "0", "0", DriverStandingsTableDto(season = "2099")),
+        ),
+        constructorStandings = ConstructorStandingsResponseDto(
+            ConstructorStandingsMrDataDto("30", "0", "0", ConstructorStandingsTableDto(season = "2099")),
+        ),
+        drivers = DriverTableResponseDto(DriverTableMrDataDto("30", "0", "0", DriverTableDto())),
+        constructors = ConstructorTableResponseDto(ConstructorTableMrDataDto("30", "0", "0", ConstructorTableDto())),
+        circuitSeasons = circuitSeasons,
+        circuitResults = circuitResults,
+    )
+
     private fun standingsOnlyApi() = FakeJolpicaApiService(
         schedule = RaceResponseDto(RaceMrDataDto("30", "0", "0", RaceTableDto())),
-        resultsByRound = emptyMap(),
+        seasonResultPages = emptyMap(),
         driverStandings = DriverStandingsResponseDto(
             DriverStandingsMrDataDto(
                 "30", "0", "1",

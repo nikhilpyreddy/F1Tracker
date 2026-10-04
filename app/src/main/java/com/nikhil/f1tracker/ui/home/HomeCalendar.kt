@@ -36,13 +36,13 @@ fun LazyListScope.calendarSection(
     calendar: List<CalendarRace>,
     isExpanded: Boolean,
     onToggleExpanded: () -> Unit,
-    onRaceClick: (String) -> Unit,
+    onRaceClick: (CalendarRace) -> Unit,
 ) {
     if (calendar.isEmpty()) return
     item(key = "calendar-header") { SectionHeader("Calendar") }
     val shown = if (isExpanded) calendar else calendarWindow(calendar)
     items(shown, key = { "calendar-${it.round}" }) { race ->
-        CalendarRow(race, onClick = { onRaceClick(race.circuitId) })
+        CalendarRow(race, onClick = { onRaceClick(race) })
     }
     if (shown.size < calendar.size || isExpanded) {
         item(key = "calendar-toggle") {

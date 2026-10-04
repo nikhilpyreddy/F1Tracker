@@ -58,6 +58,13 @@ class FakeF1Repository : F1Repository {
 
     override suspend fun syncConstructorRoster(season: Int) = throwIfFailing()
 
+    val syncedCircuitHistories = mutableListOf<String>()
+
+    override suspend fun syncCircuitHistory(circuitId: String, sinceSeason: Int) {
+        throwIfFailing()
+        syncedCircuitHistories += circuitId
+    }
+
     override fun getAllDrivers(): Flow<List<DriverEntity>> = allDrivers
 
     override fun getAllConstructors(): Flow<List<ConstructorEntity>> = allConstructors
@@ -67,6 +74,9 @@ class FakeF1Repository : F1Repository {
 
     override fun getCircuit(circuitId: String): Flow<CircuitEntity?> =
         allCircuits.map { circuits -> circuits.find { it.circuitId == circuitId } }
+
+    override fun getResultsForSeason(season: Int): Flow<List<ResultEntity>> =
+        allResults.map { results -> results.filter { it.season == season } }
 
     override fun getResultsForDriver(driverId: String): Flow<List<ResultEntity>> =
         allResults.map { results -> results.filter { it.driverId == driverId } }
@@ -81,6 +91,12 @@ class FakeF1Repository : F1Repository {
         combine(allResults, allRaces) { results, races ->
             val roundsAtCircuit = races.filter { it.circuitId == circuitId }.map { it.season to it.round }.toSet()
             results.filter { it.driverId == driverId && (it.season to it.round) in roundsAtCircuit }
+        }
+
+    override fun getResultsAtCircuit(circuitId: String): Flow<List<ResultEntity>> =
+        combine(allResults, allRaces) { results, races ->
+            val roundsAtCircuit = races.filter { it.circuitId == circuitId }.map { it.season to it.round }.toSet()
+            results.filter { (it.season to it.round) in roundsAtCircuit }
         }
 
     override fun getDriverStandingsForSeason(season: Int): Flow<List<DriverStandingEntity>> =

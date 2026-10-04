@@ -4,20 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.APP_ZONE
+import com.nikhil.f1tracker.domain.stats.seasonRemaining
 import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Clock
+import java.time.Instant
 import java.time.Year
 import javax.inject.Inject
 
 @HiltViewModel
 class StandingsViewModel @Inject constructor(
     private val f1Repository: F1Repository,
+    private val clock: Clock = Clock.systemUTC(),
 ) : ViewModel() {
 
     private val currentSeason = Year.now(APP_ZONE).value
@@ -69,11 +74,16 @@ class StandingsViewModel @Inject constructor(
         SyncStatus(loading, refreshing, error, m)
     }
 
+    private val remaining = f1Repository.getRacesForSeason(currentSeason).map { races ->
+        races.takeIf { it.isNotEmpty() }?.let { seasonRemaining(it, Instant.now(clock)) }
+    }
+
     val uiState: StateFlow<StandingsUiState> = combine(
         driverRows,
         constructorRows,
         syncStatus,
-    ) { drivers, constructors, status ->
+        remaining,
+    ) { drivers, constructors, status, remaining ->
         StandingsUiState(
             isLoading = status.isLoading,
             isRefreshing = status.isRefreshing,
@@ -81,6 +91,7 @@ class StandingsViewModel @Inject constructor(
             mode = status.mode,
             driverStandings = drivers,
             constructorStandings = constructors,
+            remaining = remaining,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), StandingsUiState())
 
@@ -105,6 +116,7 @@ class StandingsViewModel @Inject constructor(
             if (forceRefresh) isRefreshing.value = true else isLoading.value = true
             loadErrorMessage.value = null
             syncCatching {
+                f1Repository.syncSchedule(currentSeason, forceRefresh)
                 f1Repository.syncDriverStandings(currentSeason, forceRefresh)
                 f1Repository.syncConstructorStandings(currentSeason, forceRefresh)
             }.onFailure {

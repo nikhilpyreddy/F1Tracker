@@ -1,5 +1,7 @@
 package com.nikhil.f1tracker.ui.standings
 
+import com.nikhil.f1tracker.domain.stats.SeasonRemaining
+
 enum class StandingsMode { DRIVERS, TEAMS }
 
 data class StandingsUiState(
@@ -9,6 +11,8 @@ data class StandingsUiState(
     val mode: StandingsMode = StandingsMode.DRIVERS,
     val driverStandings: List<DriverStandingRow> = emptyList(),
     val constructorStandings: List<ConstructorStandingRow> = emptyList(),
+    /** Races and sprints still to run this season; null until the calendar has loaded. */
+    val remaining: SeasonRemaining? = null,
 )
 
 data class DriverStandingRow(

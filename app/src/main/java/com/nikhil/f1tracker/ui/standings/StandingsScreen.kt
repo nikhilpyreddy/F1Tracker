@@ -28,6 +28,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nikhil.f1tracker.domain.stats.SeasonRemaining
+import com.nikhil.f1tracker.domain.stats.titleOutlook
+import com.nikhil.f1tracker.ui.common.identity.formatPoints
 import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
 import com.nikhil.f1tracker.ui.common.identity.StandingRow
 import com.nikhil.f1tracker.ui.common.identity.TeamDot
@@ -105,6 +108,7 @@ private fun StandingsContent(
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { ModeToggle(uiState.mode, onModeSelected, Modifier.padding(16.dp)) }
+        uiState.remaining?.let { remaining -> item { RemainingSummary(remaining, uiState.mode) } }
         when (uiState.mode) {
             StandingsMode.DRIVERS -> {
                 val leaderPoints = uiState.driverStandings.maxOfOrNull { it.points } ?: 0.0
@@ -112,7 +116,11 @@ private fun StandingsContent(
                     StandingRow(
                         position = row.position,
                         title = row.driverName,
-                        subtitle = listOfNotNull(row.teamName, winsLabel(row.wins)).joinToString(" · "),
+                        subtitle = listOfNotNull(
+                            row.teamName,
+                            winsLabel(row.wins),
+                            uiState.remaining?.let { titleLabel(row.points, leaderPoints, it.maxDriverPoints) },
+                        ).joinToString(" · "),
                         points = row.points,
                         leaderPoints = leaderPoints,
                         color = driverColor(row.driverId, row.constructorId),
@@ -126,7 +134,10 @@ private fun StandingsContent(
                     StandingRow(
                         position = row.position,
                         title = row.teamName,
-                        subtitle = winsLabel(row.wins),
+                        subtitle = listOfNotNull(
+                            winsLabel(row.wins),
+                            uiState.remaining?.let { titleLabel(row.points, leaderPoints, it.maxTeamPoints) },
+                        ).joinToString(" · ").ifEmpty { null },
                         points = row.points,
                         leaderPoints = leaderPoints,
                         color = teamColor(row.constructorId),
@@ -166,4 +177,31 @@ private fun winsLabel(wins: Int): String? = when (wins) {
     0 -> null
     1 -> "1 win"
     else -> "$wins wins"
+}
+
+@Composable
+private fun RemainingSummary(remaining: SeasonRemaining, mode: StandingsMode) {
+    val maxPoints = if (mode == StandingsMode.DRIVERS) remaining.maxDriverPoints else remaining.maxTeamPoints
+    val text = if (remaining.races == 0) {
+        "Season complete"
+    } else {
+        "${remaining.races} races" + (if (remaining.sprints > 0) " + ${remaining.sprints} sprints" else "") +
+            " left · up to $maxPoints pts still available per ${if (mode == StandingsMode.DRIVERS) "driver" else "team"}"
+    }
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+    )
+}
+
+/** "Leads by 24", "−31 · max 412", or "Out of title contention". */
+private fun titleLabel(points: Double, leaderPoints: Double, maxStillAvailable: Int): String {
+    val outlook = titleOutlook(points, leaderPoints, maxStillAvailable)
+    return when {
+        outlook.gapToLeader <= 0.0 -> "Leads"
+        !outlook.isAlive -> "Out of title contention"
+        else -> "−${formatPoints(outlook.gapToLeader)} · max ${formatPoints(outlook.maxPossible)}"
+    }
 }

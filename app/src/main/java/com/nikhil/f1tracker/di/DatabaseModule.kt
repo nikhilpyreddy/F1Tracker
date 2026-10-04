@@ -3,6 +3,7 @@ package com.nikhil.f1tracker.di
 import android.content.Context
 import androidx.room.Room
 import com.nikhil.f1tracker.data.local.F1Database
+import com.nikhil.f1tracker.data.local.dao.ApiCacheDao
 import com.nikhil.f1tracker.data.local.dao.CircuitDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorStandingDao
@@ -55,4 +56,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDriverIdentityDao(database: F1Database): DriverIdentityDao = database.driverIdentityDao()
+
+    @Provides
+    fun provideApiCacheDao(database: F1Database): ApiCacheDao = database.apiCacheDao()
 }

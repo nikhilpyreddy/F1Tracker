@@ -4,6 +4,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.nikhil.f1tracker.data.remote.JolpicaApiService
 import com.nikhil.f1tracker.data.remote.RequestSpacer
 import com.nikhil.f1tracker.data.remote.openf1.OpenF1ApiService
+import com.nikhil.f1tracker.data.remote.openmeteo.OpenMeteoApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -84,6 +85,11 @@ object NetworkModule {
     @Singleton
     fun provideOpenF1ApiService(@OpenF1Client client: OkHttpClient, json: Json): OpenF1ApiService =
         retrofit(OpenF1ApiService.BASE_URL, client, json).create(OpenF1ApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideOpenMeteoApiService(base: OkHttpClient, json: Json): OpenMeteoApiService =
+        retrofit(OpenMeteoApiService.BASE_URL, base, json).create(OpenMeteoApiService::class.java)
 
     private fun retrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit = Retrofit.Builder()
         .baseUrl(baseUrl)

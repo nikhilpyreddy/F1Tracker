@@ -2,6 +2,7 @@ package com.nikhil.f1tracker.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.nikhil.f1tracker.data.local.dao.ApiCacheDao
 import com.nikhil.f1tracker.data.local.dao.CircuitDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorStandingDao
@@ -10,6 +11,7 @@ import com.nikhil.f1tracker.data.local.dao.DriverIdentityDao
 import com.nikhil.f1tracker.data.local.dao.DriverStandingDao
 import com.nikhil.f1tracker.data.local.dao.RaceDao
 import com.nikhil.f1tracker.data.local.dao.ResultDao
+import com.nikhil.f1tracker.data.local.entity.ApiCacheEntity
 import com.nikhil.f1tracker.data.local.entity.CircuitEntity
 import com.nikhil.f1tracker.data.local.entity.ConstructorEntity
 import com.nikhil.f1tracker.data.local.entity.ConstructorStandingEntity
@@ -29,8 +31,9 @@ import com.nikhil.f1tracker.data.local.entity.ResultEntity
         DriverStandingEntity::class,
         ConstructorStandingEntity::class,
         DriverIdentityEntity::class,
+        ApiCacheEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class F1Database : RoomDatabase() {
@@ -42,6 +45,7 @@ abstract class F1Database : RoomDatabase() {
     abstract fun driverStandingDao(): DriverStandingDao
     abstract fun constructorStandingDao(): ConstructorStandingDao
     abstract fun driverIdentityDao(): DriverIdentityDao
+    abstract fun apiCacheDao(): ApiCacheDao
 
     companion object {
         const val DATABASE_NAME = "f1_tracker.db"

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.domain.stats.CircuitStat
+import com.nikhil.f1tracker.ui.weekend.track.TrackTab
 
 @Composable
 fun WeekendRoute(
@@ -107,6 +108,7 @@ fun WeekendScreen(
             }
             when (uiState.selectedTab) {
                 WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick)
+                WeekendTab.TRACK -> TrackTab()
                 WeekendTab.FORM -> FormTab(uiState, onDriverClick)
             }
         }

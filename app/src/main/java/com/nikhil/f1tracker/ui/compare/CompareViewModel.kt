@@ -40,8 +40,8 @@ class CompareViewModel @Inject constructor(
     private val selectedSecondId = MutableStateFlow<String?>(null)
 
     private val roster = combine(
-        f1Repository.getAllDrivers(),
-        f1Repository.getAllConstructors(),
+        f1Repository.getSeasonDrivers(currentSeason),
+        f1Repository.getSeasonConstructors(currentSeason),
     ) { drivers, teams -> Roster(drivers, teams) }
 
     private val firstTrend = trendFor(selectedFirstId)

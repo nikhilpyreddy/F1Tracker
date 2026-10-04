@@ -45,7 +45,7 @@ class GrandPrixDetailViewModel @Inject constructor(
         races.sortedBy { it.round }.map { GrandPrixOption(it.circuitId, it.raceName) }.distinctBy { it.circuitId }
     }
 
-    private val drivers = f1Repository.getAllDrivers().map { list ->
+    private val drivers = f1Repository.getSeasonDrivers(currentSeason).map { list ->
         list.sortedBy { it.familyName }.map { DriverOption(it.driverId, "${it.givenName} ${it.familyName}") }
     }
 

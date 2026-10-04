@@ -15,6 +15,17 @@ interface ConstructorDao {
     @Query("SELECT * FROM constructors ORDER BY name")
     fun getAll(): Flow<List<ConstructorEntity>>
 
+    @Query(
+        """
+        SELECT * FROM constructors WHERE constructorId IN (
+            SELECT constructorId FROM constructor_standings WHERE season = :season
+            UNION SELECT constructorId FROM results WHERE season = :season
+        )
+        ORDER BY name
+        """
+    )
+    fun getBySeason(season: Int): Flow<List<ConstructorEntity>>
+
     @Query("SELECT * FROM constructors WHERE constructorId = :constructorId")
     fun getById(constructorId: String): Flow<ConstructorEntity?>
 

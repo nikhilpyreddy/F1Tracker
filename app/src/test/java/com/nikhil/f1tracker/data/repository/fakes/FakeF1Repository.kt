@@ -69,6 +69,10 @@ class FakeF1Repository : F1Repository {
 
     override fun getAllConstructors(): Flow<List<ConstructorEntity>> = allConstructors
 
+    override fun getSeasonDrivers(season: Int): Flow<List<DriverEntity>> = allDrivers
+
+    override fun getSeasonConstructors(season: Int): Flow<List<ConstructorEntity>> = allConstructors
+
     override fun getRacesForSeason(season: Int): Flow<List<RaceEntity>> =
         allRaces.map { races -> races.filter { it.season == season } }
 

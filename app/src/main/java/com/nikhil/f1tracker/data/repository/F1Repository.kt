@@ -24,6 +24,10 @@ interface F1Repository {
     fun getAllDrivers(): Flow<List<DriverEntity>>
     fun getAllConstructors(): Flow<List<ConstructorEntity>>
 
+    /** Drivers/teams racing in [season]; before its first race, last season's grid instead. */
+    fun getSeasonDrivers(season: Int): Flow<List<DriverEntity>>
+    fun getSeasonConstructors(season: Int): Flow<List<ConstructorEntity>>
+
     fun getRacesForSeason(season: Int): Flow<List<RaceEntity>>
     fun getCircuit(circuitId: String): Flow<CircuitEntity?>
 

@@ -16,6 +16,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.Year
 import javax.inject.Inject
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 
 class F1RepositoryImpl @Inject constructor(
@@ -154,6 +155,16 @@ class F1RepositoryImpl @Inject constructor(
     override fun getAllDrivers() = driverDao.getAll()
 
     override fun getAllConstructors() = constructorDao.getAll()
+
+    override fun getSeasonDrivers(season: Int) =
+        combine(driverDao.getBySeason(season), driverDao.getBySeason(season - 1)) { current, previous ->
+            current.ifEmpty { previous }
+        }
+
+    override fun getSeasonConstructors(season: Int) =
+        combine(constructorDao.getBySeason(season), constructorDao.getBySeason(season - 1)) { current, previous ->
+            current.ifEmpty { previous }
+        }
 
     override fun getRacesForSeason(season: Int) = raceDao.getBySeason(season)
 

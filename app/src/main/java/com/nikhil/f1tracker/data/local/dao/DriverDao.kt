@@ -15,6 +15,17 @@ interface DriverDao {
     @Query("SELECT * FROM drivers ORDER BY familyName")
     fun getAll(): Flow<List<DriverEntity>>
 
+    @Query(
+        """
+        SELECT * FROM drivers WHERE driverId IN (
+            SELECT driverId FROM driver_standings WHERE season = :season
+            UNION SELECT driverId FROM results WHERE season = :season
+        )
+        ORDER BY familyName
+        """
+    )
+    fun getBySeason(season: Int): Flow<List<DriverEntity>>
+
     @Query("SELECT * FROM drivers WHERE driverId = :driverId")
     fun getById(driverId: String): Flow<DriverEntity?>
 

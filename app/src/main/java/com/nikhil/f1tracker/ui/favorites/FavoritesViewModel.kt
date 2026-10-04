@@ -37,8 +37,8 @@ class FavoritesViewModel @Inject constructor(
     ) { loading, loadError, limitMessage -> SyncStatus(loading, loadError, limitMessage) }
 
     val uiState: StateFlow<FavoritesUiState> = combine(
-        f1Repository.getAllDrivers(),
-        f1Repository.getAllConstructors(),
+        f1Repository.getSeasonDrivers(currentSeason),
+        f1Repository.getSeasonConstructors(currentSeason),
         favoritesRepository.favoriteSelection,
         syncStatus,
     ) { drivers, teams, selection, status ->
@@ -89,6 +89,9 @@ class FavoritesViewModel @Inject constructor(
             syncCatching {
                 f1Repository.syncDriverRoster(currentSeason)
                 f1Repository.syncConstructorRoster(currentSeason)
+                // Standings are what tie drivers/teams to this season for the lists above.
+                f1Repository.syncDriverStandings(currentSeason)
+                f1Repository.syncConstructorStandings(currentSeason)
             }.onFailure {
                 loadErrorMessage.value = "Couldn't load drivers and teams. Check your connection and try again."
             }

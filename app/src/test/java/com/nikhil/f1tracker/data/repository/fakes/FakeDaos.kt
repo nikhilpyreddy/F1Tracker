@@ -23,6 +23,7 @@ class FakeDriverDao : DriverDao {
         drivers.forEach { upserted[it.driverId] = it }
     }
     override fun getAll(): Flow<List<DriverEntity>> = flowOf(upserted.values.toList())
+    override fun getBySeason(season: Int): Flow<List<DriverEntity>> = flowOf(emptyList())
     override fun getById(driverId: String): Flow<DriverEntity?> = flowOf(upserted[driverId])
     override fun getByIds(driverIds: List<String>): Flow<List<DriverEntity>> =
         flowOf(driverIds.mapNotNull { upserted[it] })
@@ -34,6 +35,7 @@ class FakeConstructorDao : ConstructorDao {
         constructors.forEach { upserted[it.constructorId] = it }
     }
     override fun getAll(): Flow<List<ConstructorEntity>> = flowOf(upserted.values.toList())
+    override fun getBySeason(season: Int): Flow<List<ConstructorEntity>> = flowOf(emptyList())
     override fun getById(constructorId: String): Flow<ConstructorEntity?> = flowOf(upserted[constructorId])
     override fun getByIds(constructorIds: List<String>): Flow<List<ConstructorEntity>> =
         flowOf(constructorIds.mapNotNull { upserted[it] })

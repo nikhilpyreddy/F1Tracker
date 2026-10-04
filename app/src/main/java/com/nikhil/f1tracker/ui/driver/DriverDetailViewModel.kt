@@ -111,6 +111,7 @@ class DriverDetailViewModel @Inject constructor(
             raceName = race?.raceName ?: "Round $round",
             circuitId = race?.circuitId.orEmpty(),
             positionText = positionText,
+            grid = grid,
             points = points,
             status = status,
         )

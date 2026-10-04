@@ -20,6 +20,7 @@ data class DriverSeasonResultRow(
     val raceName: String,
     val circuitId: String,
     val positionText: String,
+    val grid: Int,
     val points: Double,
     val status: String,
 )

@@ -25,6 +25,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import java.util.Locale
+import com.nikhil.f1tracker.ui.common.RacePosition
+import com.nikhil.f1tracker.ui.common.PositionChart
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.Tab
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -109,6 +117,7 @@ private fun DriverDetailContent(
     onResultClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var tab by rememberSaveable { mutableStateOf(DriverTab.RACE_BY_RACE) }
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item {
             Column(Modifier.padding(16.dp)) {
@@ -119,28 +128,50 @@ private fun DriverDetailContent(
                         uiState.nationality?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     }
                 }
-                Text(
-                    "Points by season",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-                )
-                LineChart(
-                    series = listOf(ChartSeries("Points", driverColor(uiState.driverId), uiState.pointsTrend)),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(
-                    "Results",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
-                )
-                SeasonPicker(uiState.availableSeasons, uiState.selectedSeason, onSeasonSelected)
+                PrimaryTabRow(selectedTabIndex = tab.ordinal, modifier = Modifier.padding(top = 16.dp)) {
+                    DriverTab.entries.forEach { candidate ->
+                        Tab(selected = tab == candidate, onClick = { tab = candidate }, text = { Text(candidate.label) })
+                    }
+                }
+                when (tab) {
+                    DriverTab.SEASONS -> {
+                        Text(
+                            "Points by season",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                        )
+                        LineChart(
+                            series = listOf(ChartSeries("Points", driverColor(uiState.driverId), uiState.pointsTrend)),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    DriverTab.RACE_BY_RACE -> {
+                        Text(
+                            "Finishing position by Grand Prix",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                        )
+                        SeasonPicker(uiState.availableSeasons, uiState.selectedSeason, onSeasonSelected)
+                        PositionChart(
+                            races = uiState.seasonResults.map {
+                                RacePosition(it.round, it.positionText.toIntOrNull(), it.positionText, it.grid)
+                            },
+                            lineColor = driverColor(uiState.driverId),
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                        )
+                        SeasonSummary(uiState.seasonResults)
+                    }
+                }
             }
         }
+        if (tab == DriverTab.SEASONS) return@LazyColumn
         items(uiState.seasonResults, key = { it.round }) { result ->
             ListItem(
                 leadingContent = { FinishBadge(result.positionText, size = 36.dp) },
                 headlineContent = { Text(result.raceName) },
-                supportingContent = { Text(result.status) },
+                supportingContent = {
+                    Text(if (result.grid > 0) "Started P${result.grid} · ${result.status}" else "Pit-lane start · ${result.status}")
+                },
                 trailingContent = {
                     Text("${result.positionText} · ${result.points.formatPoints()} pts")
                 },
@@ -197,7 +228,7 @@ private fun DriverDetailScreenPreview() {
                 availableSeasons = listOf(2023, 2024, 2025, 2026),
                 selectedSeason = 2026,
                 seasonResults = listOf(
-                    DriverSeasonResultRow(1, "Bahrain Grand Prix", "bahrain", "6", 8.0, "Finished"),
+                    DriverSeasonResultRow(1, "Bahrain Grand Prix", "bahrain", "6", 3, 8.0, "Finished"),
                 ),
             ),
             onBackClick = {},
@@ -206,4 +237,23 @@ private fun DriverDetailScreenPreview() {
             onRetry = {},
         )
     }
+}
+
+private enum class DriverTab(val label: String) { SEASONS("Seasons"), RACE_BY_RACE("Race by race") }
+
+/** Season-at-a-glance numbers for the race-by-race view. */
+@Composable
+private fun SeasonSummary(results: List<DriverSeasonResultRow>) {
+    if (results.isEmpty()) return
+    val finishes = results.mapNotNull { it.positionText.toIntOrNull() }
+    val gained = results.filter { it.grid > 0 }.mapNotNull { r -> r.positionText.toIntOrNull()?.let { r.grid - it } }
+    val parts = listOfNotNull(
+        finishes.takeIf { it.isNotEmpty() }?.let { "Avg finish P%.1f".format(Locale.US, it.average()) },
+        "Wins ${finishes.count { it == 1 }}",
+        "Podiums ${finishes.count { it <= 3 }}",
+        "Top 10 ${finishes.count { it <= 10 }}/${results.size}",
+        "DNF ${results.size - finishes.size}",
+        gained.takeIf { it.isNotEmpty() }?.let { "Avg places gained %+.1f".format(Locale.US, it.average()) },
+    )
+    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 12.dp))
 }

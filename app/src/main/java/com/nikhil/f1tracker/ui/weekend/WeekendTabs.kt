@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,7 +42,7 @@ import kotlin.math.roundToInt
 fun CircuitTab(
     uiState: WeekendUiState,
     onStatClick: (CircuitStat) -> Unit,
-    onCircuitHistoryClick: () -> Unit,
+    onHistoryDriverSelected: (String) -> Unit,
     onDriverClick: (String) -> Unit,
     onOpenResults: () -> Unit,
     modifier: Modifier = Modifier,
@@ -68,9 +67,7 @@ fun CircuitTab(
         if (stats != null) {
             items(statCards(stats), key = { it.stat }) { card -> StatCard(card, onClick = { onStatClick(card.stat) }) }
         }
-        item {
-            OutlinedButton(onClick = onCircuitHistoryClick) { Text("Driver history at this circuit") }
-        }
+        item { DriverHistoryCard(uiState, onHistoryDriverSelected) }
     }
 }
 

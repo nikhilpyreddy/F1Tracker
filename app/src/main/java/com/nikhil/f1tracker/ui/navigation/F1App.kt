@@ -31,7 +31,6 @@ import com.nikhil.f1tracker.ui.common.identity.LocalF1Identities
 import com.nikhil.f1tracker.ui.compare.CompareRoute
 import com.nikhil.f1tracker.ui.driver.DriverDetailRoute
 import com.nikhil.f1tracker.ui.favorites.FavoritesRoute
-import com.nikhil.f1tracker.ui.grandprix.GrandPrixDetailRoute
 import com.nikhil.f1tracker.ui.home.HomeRoute
 import com.nikhil.f1tracker.ui.races.RacesRoute
 import com.nikhil.f1tracker.ui.standings.StandingsRoute
@@ -46,15 +45,12 @@ private object F1Destinations {
     const val FAVORITES = "favorites"
     const val DRIVER_DETAIL = "driverDetail/{driverId}"
     const val TEAM_DETAIL = "teamDetail/{constructorId}"
-    const val GRAND_PRIX_DETAIL = "grandPrixDetail/{circuitId}?driverId={driverId}"
     const val WEEKEND = "weekend/{season}/{round}/{circuitId}"
 
     fun compare(firstDriverId: String? = null) = if (firstDriverId == null) "compare" else "compare?first=$firstDriverId"
     fun driverDetail(driverId: String) = "driverDetail/$driverId"
     fun teamDetail(constructorId: String) = "teamDetail/$constructorId"
     fun weekend(season: Int, round: Int, circuitId: String) = "weekend/$season/$round/$circuitId"
-    fun grandPrixDetail(circuitId: String, driverId: String? = null) =
-        if (driverId == null) "grandPrixDetail/$circuitId" else "grandPrixDetail/$circuitId?driverId=$driverId"
 }
 
 private data class TopLevelDestination(
@@ -185,24 +181,8 @@ private fun F1Scaffold(navController: NavHostController) {
             ) {
                 WeekendRoute(
                     onBackClick = { navController.navigateUp() },
-                    onCircuitHistoryClick = { circuitId ->
-                        navController.navigate(F1Destinations.grandPrixDetail(circuitId))
-                    },
                     onDriverClick = { driverId -> navController.navigate(F1Destinations.driverDetail(driverId)) },
                 )
-            }
-            composable(
-                route = F1Destinations.GRAND_PRIX_DETAIL,
-                arguments = listOf(
-                    navArgument("circuitId") { type = NavType.StringType },
-                    navArgument("driverId") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                ),
-            ) {
-                GrandPrixDetailRoute(onBackClick = { navController.navigateUp() })
             }
         }
     }

@@ -1,7 +1,6 @@
 package com.nikhil.f1tracker.domain.model
 
 const val YEARS_OF_HISTORY = 4
-const val GRAND_PRIX_HISTORY_YEARS = 6
 
 /** Seasons of circuit history behind the Weekend screen's base rates. */
 const val CIRCUIT_HISTORY_SEASONS = 10

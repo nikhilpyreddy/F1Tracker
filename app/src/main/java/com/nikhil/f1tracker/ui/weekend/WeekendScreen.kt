@@ -34,7 +34,6 @@ import com.nikhil.f1tracker.ui.weekend.track.TrackTab
 @Composable
 fun WeekendRoute(
     onBackClick: () -> Unit,
-    onCircuitHistoryClick: (String) -> Unit,
     onDriverClick: (String) -> Unit,
     viewModel: WeekendViewModel = hiltViewModel(),
 ) {
@@ -45,7 +44,7 @@ fun WeekendRoute(
         onTabSelected = viewModel::selectTab,
         onStatClick = viewModel::openStat,
         onOpenResults = { viewModel.openResults() },
-        onCircuitHistoryClick = { onCircuitHistoryClick(uiState.circuitId) },
+        onHistoryDriverSelected = viewModel::selectHistoryDriver,
         onDriverClick = onDriverClick,
         onRetry = viewModel::retry,
     )
@@ -81,7 +80,7 @@ fun WeekendScreen(
     onTabSelected: (WeekendTab) -> Unit,
     onStatClick: (CircuitStat) -> Unit,
     onOpenResults: () -> Unit,
-    onCircuitHistoryClick: () -> Unit,
+    onHistoryDriverSelected: (String) -> Unit,
     onDriverClick: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,7 +122,7 @@ fun WeekendScreen(
                 }
             }
             when (uiState.selectedTab) {
-                WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick, onDriverClick, onOpenResults)
+                WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onHistoryDriverSelected, onDriverClick, onOpenResults)
                 WeekendTab.QUALIFYING -> QualifyingTab(onDriverClick)
                 WeekendTab.TRACK -> TrackTab()
                 WeekendTab.STRATEGY -> StrategyTab()

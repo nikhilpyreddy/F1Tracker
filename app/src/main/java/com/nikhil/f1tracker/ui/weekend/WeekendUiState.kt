@@ -25,6 +25,22 @@ data class WeekendUiState(
     val lastPodium: List<ClassificationRow> = emptyList(),
     val lastRaceSeason: Int? = null,
     val resultsSheet: ResultsSheet? = null,
+    /** This season's drivers, for picking whose history at this circuit to show. */
+    val historyDrivers: List<HistoryDriver> = emptyList(),
+    val selectedHistoryDriverId: String? = null,
+    /** The selected driver's results here, newest first. */
+    val driverHistory: List<DriverCircuitResult> = emptyList(),
+)
+
+data class HistoryDriver(val driverId: String, val name: String)
+
+data class DriverCircuitResult(
+    val season: Int,
+    val constructorId: String,
+    val positionText: String,
+    val grid: Int,
+    val points: Double,
+    val status: String,
 )
 
 /** One driver's line in a race classification. */

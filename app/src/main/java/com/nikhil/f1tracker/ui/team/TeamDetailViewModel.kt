@@ -49,6 +49,7 @@ class TeamDetailViewModel @Inject constructor(
         TeamDetailUiState(
             isLoading = loading,
             loadErrorMessage = error,
+            constructorId = constructorId,
             teamName = team?.name.orEmpty(),
             nationality = team?.nationality,
             pointsTrend = seasons.map { year -> ChartPoint(year.toString(), bySeasonYear[year]?.points?.toFloat() ?: 0f) },

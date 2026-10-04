@@ -33,6 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.domain.model.GRAND_PRIX_HISTORY_YEARS
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.FinishBadge
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
+import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -137,6 +143,7 @@ private fun GrandPrixDetailContent(
         if (uiState.selectedDriverId != null && uiState.history.isNotEmpty()) {
             items(uiState.history, key = { it.season }) { row ->
                 ListItem(
+                    leadingContent = { FinishBadge(row.positionText, size = 36.dp) },
                     headlineContent = { Text(row.season.toString()) },
                     supportingContent = { Text(row.status) },
                     trailingContent = { Text("${row.positionText} · ${row.points.formatPoints()} pts") },
@@ -153,13 +160,15 @@ private fun GrandPrixDetailContent(
         items(uiState.drivers, key = { it.driverId }) { driver ->
             val isSelected = driver.driverId == uiState.selectedDriverId
             ListItem(
+                leadingContent = { DriverAvatar(driver.driverId) },
                 headlineContent = { Text(driver.driverName) },
                 trailingContent = if (isSelected) {
                     { Text("Selected", style = MaterialTheme.typography.labelMedium) }
                 } else {
                     null
                 },
-                modifier = Modifier.clickable { onDriverSelected(driver.driverId) },
+                modifier = Modifier.clickable { onDriverSelected(driver.driverId) }
+                    .teamStripe(driverColor(driver.driverId)),
             )
         }
     }

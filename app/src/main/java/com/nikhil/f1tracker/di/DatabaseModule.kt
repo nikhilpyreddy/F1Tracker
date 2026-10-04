@@ -7,6 +7,7 @@ import com.nikhil.f1tracker.data.local.dao.CircuitDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorStandingDao
 import com.nikhil.f1tracker.data.local.dao.DriverDao
+import com.nikhil.f1tracker.data.local.dao.DriverIdentityDao
 import com.nikhil.f1tracker.data.local.dao.DriverStandingDao
 import com.nikhil.f1tracker.data.local.dao.RaceDao
 import com.nikhil.f1tracker.data.local.dao.ResultDao
@@ -51,4 +52,7 @@ object DatabaseModule {
     @Provides
     fun provideConstructorStandingDao(database: F1Database): ConstructorStandingDao =
         database.constructorStandingDao()
+
+    @Provides
+    fun provideDriverIdentityDao(database: F1Database): DriverIdentityDao = database.driverIdentityDao()
 }

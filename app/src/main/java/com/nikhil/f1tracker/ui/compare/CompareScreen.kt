@@ -34,6 +34,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.ui.common.ChartSeries
 import com.nikhil.f1tracker.ui.common.LineChart
 import com.nikhil.f1tracker.ui.common.chartSeriesColor
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
+import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -117,8 +122,9 @@ private fun CompareContent(
                     badge = badgeFor(driver.driverId, uiState.selectedFirstId, uiState.selectedSecondId),
                     colorA = colorA,
                     colorB = colorB,
+                    stripeColor = driverColor(driver.driverId),
                     onClick = { onItemSelected(driver.driverId) },
-                )
+                ) { DriverAvatar(driver.driverId) }
             }
             CompareMode.TEAMS -> items(uiState.availableTeams, key = { it.constructorId }) { team ->
                 CompareRow(
@@ -127,8 +133,9 @@ private fun CompareContent(
                     badge = badgeFor(team.constructorId, uiState.selectedFirstId, uiState.selectedSecondId),
                     colorA = colorA,
                     colorB = colorB,
+                    stripeColor = teamColor(team.constructorId),
                     onClick = { onItemSelected(team.constructorId) },
-                )
+                ) { TeamDot(team.constructorId, size = 20.dp) }
             }
         }
     }
@@ -149,9 +156,12 @@ private fun CompareRow(
     badge: SelectionBadge,
     colorA: Color,
     colorB: Color,
+    stripeColor: Color,
     onClick: () -> Unit,
+    leading: @Composable () -> Unit,
 ) {
     ListItem(
+        leadingContent = leading,
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = {
@@ -166,7 +176,7 @@ private fun CompareRow(
                 }
             }
         },
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.clickable(onClick = onClick).teamStripe(stripeColor),
     )
 }
 

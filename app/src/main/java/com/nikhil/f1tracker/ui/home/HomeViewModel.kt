@@ -86,6 +86,8 @@ class HomeViewModel @Inject constructor(
                 .filter { it.constructorId in entities.selection.teamIds }
                 .sortedBy { it.position }
                 .map { it.toFavoriteTeamStanding(teamNamesById) },
+            driverLeaderPoints = races.driverStandings.maxOfOrNull { it.points } ?: 0.0,
+            teamLeaderPoints = races.constructorStandings.maxOfOrNull { it.points } ?: 0.0,
         )
     }
 
@@ -147,6 +149,7 @@ class HomeViewModel @Inject constructor(
             driverId = driverId,
             driverName = driversById[driverId]?.let { "${it.givenName} ${it.familyName}" } ?: driverId,
             teamName = constructorId?.let { teamsById[it]?.name },
+            constructorId = constructorId,
             position = position,
             points = points,
         )

@@ -8,6 +8,8 @@ data class HomeUiState(
     val calendar: List<CalendarRace> = emptyList(),
     val favoriteDrivers: List<FavoriteDriverStanding> = emptyList(),
     val favoriteTeams: List<FavoriteTeamStanding> = emptyList(),
+    val driverLeaderPoints: Double = 0.0,
+    val teamLeaderPoints: Double = 0.0,
 )
 
 data class UpcomingRace(
@@ -33,6 +35,7 @@ data class FavoriteDriverStanding(
     val driverId: String,
     val driverName: String,
     val teamName: String?,
+    val constructorId: String?,
     val position: Int,
     val points: Double,
 )

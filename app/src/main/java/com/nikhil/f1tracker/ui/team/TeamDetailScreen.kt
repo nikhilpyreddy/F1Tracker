@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.ui.common.ChartSeries
 import com.nikhil.f1tracker.ui.common.LineChart
-import com.nikhil.f1tracker.ui.common.chartSeriesColor
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.FinishBadge
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
+import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -79,14 +85,20 @@ private fun TeamDetailContent(uiState: TeamDetailUiState, modifier: Modifier = M
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item {
             Column(Modifier.padding(16.dp)) {
-                uiState.nationality?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TeamDot(uiState.constructorId, size = 40.dp)
+                    Column(Modifier.padding(start = 16.dp)) {
+                        Text(uiState.teamName, style = MaterialTheme.typography.titleLarge)
+                        uiState.nationality?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                }
                 Text(
                     "Points by season",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
                 )
                 LineChart(
-                    series = listOf(ChartSeries("Points", chartSeriesColor(0), uiState.pointsTrend)),
+                    series = listOf(ChartSeries("Points", teamColor(uiState.constructorId), uiState.pointsTrend)),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
@@ -98,6 +110,7 @@ private fun TeamDetailContent(uiState: TeamDetailUiState, modifier: Modifier = M
         }
         items(uiState.seasonStandings, key = { it.season }) { standing ->
             ListItem(
+                leadingContent = { FinishBadge("${standing.position}", size = 36.dp) },
                 headlineContent = { Text(standing.season.toString()) },
                 supportingContent = { Text("${standing.wins} wins") },
                 trailingContent = { Text("P${standing.position} · ${standing.points.formatPoints()} pts") },

@@ -35,7 +35,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.ui.common.ChartPoint
 import com.nikhil.f1tracker.ui.common.ChartSeries
 import com.nikhil.f1tracker.ui.common.LineChart
-import com.nikhil.f1tracker.ui.common.chartSeriesColor
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.FinishBadge
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
+import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -107,14 +112,20 @@ private fun DriverDetailContent(
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item {
             Column(Modifier.padding(16.dp)) {
-                uiState.nationality?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    DriverAvatar(uiState.driverId, size = 72.dp)
+                    Column(Modifier.padding(start = 16.dp)) {
+                        Text(uiState.driverName, style = MaterialTheme.typography.titleLarge)
+                        uiState.nationality?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                }
                 Text(
                     "Points by season",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
                 )
                 LineChart(
-                    series = listOf(ChartSeries("Points", chartSeriesColor(0), uiState.pointsTrend)),
+                    series = listOf(ChartSeries("Points", driverColor(uiState.driverId), uiState.pointsTrend)),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
@@ -127,6 +138,7 @@ private fun DriverDetailContent(
         }
         items(uiState.seasonResults, key = { it.round }) { result ->
             ListItem(
+                leadingContent = { FinishBadge(result.positionText, size = 36.dp) },
                 headlineContent = { Text(result.raceName) },
                 supportingContent = { Text(result.status) },
                 trailingContent = {

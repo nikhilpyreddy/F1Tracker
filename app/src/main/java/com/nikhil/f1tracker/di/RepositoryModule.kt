@@ -4,6 +4,8 @@ import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.data.repository.F1RepositoryImpl
 import com.nikhil.f1tracker.data.repository.FavoritesRepository
 import com.nikhil.f1tracker.data.repository.FavoritesRepositoryImpl
+import com.nikhil.f1tracker.data.repository.IdentityRepository
+import com.nikhil.f1tracker.data.repository.IdentityRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +23,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindFavoritesRepository(impl: FavoritesRepositoryImpl): FavoritesRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIdentityRepository(impl: IdentityRepositoryImpl): IdentityRepository
 }

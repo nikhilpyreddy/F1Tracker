@@ -16,6 +16,7 @@ data class DriverStandingRow(
     val position: Int,
     val driverName: String,
     val teamName: String?,
+    val constructorId: String?,
     val points: Double,
     val wins: Int,
 )

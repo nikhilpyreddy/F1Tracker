@@ -13,8 +13,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,6 +26,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.nikhil.f1tracker.ui.common.identity.IdentityViewModel
+import com.nikhil.f1tracker.ui.common.identity.LocalF1Identities
 import com.nikhil.f1tracker.ui.compare.CompareRoute
 import com.nikhil.f1tracker.ui.driver.DriverDetailRoute
 import com.nikhil.f1tracker.ui.favorites.FavoritesRoute
@@ -67,7 +72,18 @@ private val topLevelDestinations = listOf(
 )
 
 @Composable
-fun F1App(navController: NavHostController = rememberNavController()) {
+fun F1App(
+    navController: NavHostController = rememberNavController(),
+    identityViewModel: IdentityViewModel = hiltViewModel(),
+) {
+    val identities by identityViewModel.identities.collectAsStateWithLifecycle()
+    CompositionLocalProvider(LocalF1Identities provides identities) {
+        F1Scaffold(navController)
+    }
+}
+
+@Composable
+private fun F1Scaffold(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = topLevelDestinations.any { it.route == currentRoute }
@@ -152,6 +168,7 @@ fun F1App(navController: NavHostController = rememberNavController()) {
                     onCircuitHistoryClick = { circuitId ->
                         navController.navigate(F1Destinations.grandPrixDetail(circuitId))
                     },
+                    onDriverClick = { driverId -> navController.navigate(F1Destinations.driverDetail(driverId)) },
                 )
             }
             composable(

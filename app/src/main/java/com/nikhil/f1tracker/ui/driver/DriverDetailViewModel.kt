@@ -63,6 +63,7 @@ class DriverDetailViewModel @Inject constructor(
         DriverDetailUiState(
             isLoading = status.isLoading,
             loadErrorMessage = status.loadErrorMessage,
+            driverId = driverId,
             driverName = driver?.let { "${it.givenName} ${it.familyName}" }.orEmpty(),
             driverCode = driver?.code,
             nationality = driver?.nationality,

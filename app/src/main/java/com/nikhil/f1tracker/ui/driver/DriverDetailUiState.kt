@@ -5,6 +5,7 @@ import com.nikhil.f1tracker.ui.common.ChartPoint
 data class DriverDetailUiState(
     val isLoading: Boolean = true,
     val loadErrorMessage: String? = null,
+    val driverId: String = "",
     val driverName: String = "",
     val driverCode: String? = null,
     val nationality: String? = null,

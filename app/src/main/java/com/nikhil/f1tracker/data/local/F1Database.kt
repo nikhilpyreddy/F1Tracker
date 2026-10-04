@@ -6,6 +6,7 @@ import com.nikhil.f1tracker.data.local.dao.CircuitDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorDao
 import com.nikhil.f1tracker.data.local.dao.ConstructorStandingDao
 import com.nikhil.f1tracker.data.local.dao.DriverDao
+import com.nikhil.f1tracker.data.local.dao.DriverIdentityDao
 import com.nikhil.f1tracker.data.local.dao.DriverStandingDao
 import com.nikhil.f1tracker.data.local.dao.RaceDao
 import com.nikhil.f1tracker.data.local.dao.ResultDao
@@ -13,6 +14,7 @@ import com.nikhil.f1tracker.data.local.entity.CircuitEntity
 import com.nikhil.f1tracker.data.local.entity.ConstructorEntity
 import com.nikhil.f1tracker.data.local.entity.ConstructorStandingEntity
 import com.nikhil.f1tracker.data.local.entity.DriverEntity
+import com.nikhil.f1tracker.data.local.entity.DriverIdentityEntity
 import com.nikhil.f1tracker.data.local.entity.DriverStandingEntity
 import com.nikhil.f1tracker.data.local.entity.RaceEntity
 import com.nikhil.f1tracker.data.local.entity.ResultEntity
@@ -26,8 +28,9 @@ import com.nikhil.f1tracker.data.local.entity.ResultEntity
         ResultEntity::class,
         DriverStandingEntity::class,
         ConstructorStandingEntity::class,
+        DriverIdentityEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class F1Database : RoomDatabase() {
@@ -38,6 +41,7 @@ abstract class F1Database : RoomDatabase() {
     abstract fun resultDao(): ResultDao
     abstract fun driverStandingDao(): DriverStandingDao
     abstract fun constructorStandingDao(): ConstructorStandingDao
+    abstract fun driverIdentityDao(): DriverIdentityDao
 
     companion object {
         const val DATABASE_NAME = "f1_tracker.db"

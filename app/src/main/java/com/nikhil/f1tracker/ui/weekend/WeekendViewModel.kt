@@ -8,8 +8,10 @@ import com.nikhil.f1tracker.data.local.entity.DriverEntity
 import com.nikhil.f1tracker.data.local.entity.ResultEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.CIRCUIT_HISTORY_SEASONS
+import com.nikhil.f1tracker.domain.stats.CircuitStat
 import com.nikhil.f1tracker.domain.stats.DriverForm
 import com.nikhil.f1tracker.domain.stats.TeammateHeadToHead
+import com.nikhil.f1tracker.domain.stats.circuitStatDetails
 import com.nikhil.f1tracker.domain.stats.circuitStats
 import com.nikhil.f1tracker.domain.stats.driverForms
 import com.nikhil.f1tracker.domain.stats.teammateHeadToHeads
@@ -38,6 +40,7 @@ class WeekendViewModel @Inject constructor(
     private val isLoading = MutableStateFlow(true)
     private val loadErrorMessage = MutableStateFlow<String?>(null)
     private val selectedTab = MutableStateFlow(WeekendTab.CIRCUIT)
+    private val openStat = MutableStateFlow<CircuitStat?>(null)
 
     private val header = combine(
         f1Repository.getRacesForSeason(season).map { races -> races.find { it.round == round } },
@@ -56,8 +59,8 @@ class WeekendViewModel @Inject constructor(
         Data(atCircuit, seasonResults, n)
     }
 
-    private val status = combine(isLoading, loadErrorMessage, selectedTab) { loading, error, tab ->
-        Status(loading, error, tab)
+    private val status = combine(isLoading, loadErrorMessage, selectedTab, openStat) { loading, error, tab, stat ->
+        Status(loading, error, tab, stat)
     }
 
     val uiState: StateFlow<WeekendUiState> = combine(header, data, status) { header, data, status ->
@@ -73,6 +76,11 @@ class WeekendViewModel @Inject constructor(
             circuitStats = data.atCircuit.takeIf { it.isNotEmpty() }?.let(::circuitStats),
             driverForms = driverForms(data.seasonResults, RECENT_RACES).map { it.toRow(data.names) },
             headToHeads = teammateHeadToHeads(data.seasonResults).map { it.toRow(data.names) },
+            statSheet = status.openStat?.let { stat ->
+                val races = circuitStatDetails(stat, data.atCircuit)
+                val driverIds = races.flatMap { race -> race.lines.map { it.driverId } }.toSet()
+                StatSheet(stat, races, driverIds.associateWith { data.names.driver(it) })
+            },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), WeekendUiState())
 
@@ -82,6 +90,14 @@ class WeekendViewModel @Inject constructor(
 
     fun selectTab(tab: WeekendTab) {
         selectedTab.value = tab
+    }
+
+    fun openStat(stat: CircuitStat) {
+        openStat.value = stat
+    }
+
+    fun closeStat() {
+        openStat.value = null
     }
 
     fun retry() {
@@ -108,7 +124,12 @@ class WeekendViewModel @Inject constructor(
         fun team(id: String) = teams[id]?.name ?: id
     }
     private data class Data(val atCircuit: List<ResultEntity>, val seasonResults: List<ResultEntity>, val names: Names)
-    private data class Status(val isLoading: Boolean, val loadErrorMessage: String?, val selectedTab: WeekendTab)
+    private data class Status(
+        val isLoading: Boolean,
+        val loadErrorMessage: String?,
+        val selectedTab: WeekendTab,
+        val openStat: CircuitStat?,
+    )
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
@@ -117,6 +138,7 @@ class WeekendViewModel @Inject constructor(
         fun DriverForm.toRow(names: Names) = DriverFormRow(
             driverId = driverId,
             driverName = names.driver(driverId),
+            constructorId = constructorId,
             teamName = names.team(constructorId),
             seasonPoints = seasonPoints,
             recent = recent,
@@ -124,8 +146,11 @@ class WeekendViewModel @Inject constructor(
         )
 
         fun TeammateHeadToHead.toRow(names: Names) = HeadToHeadRow(
+            constructorId = constructorId,
             teamName = names.team(constructorId),
+            firstDriverId = firstDriverId,
             firstDriverName = names.driver(firstDriverId),
+            secondDriverId = secondDriverId,
             secondDriverName = names.driver(secondDriverId),
             gridWins = gridWins,
             finishWins = finishWins,

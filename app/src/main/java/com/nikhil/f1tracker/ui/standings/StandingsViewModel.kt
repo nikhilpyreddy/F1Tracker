@@ -41,6 +41,7 @@ class StandingsViewModel @Inject constructor(
                     ?.let { "${it.givenName} ${it.familyName}" }
                     ?: standing.driverId,
                 teamName = standing.constructorId?.let { teamsById[it]?.name },
+                constructorId = standing.constructorId,
                 points = standing.points,
                 wins = standing.wins,
             )

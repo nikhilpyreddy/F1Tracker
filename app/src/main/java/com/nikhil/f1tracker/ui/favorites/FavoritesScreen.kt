@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,6 +34,11 @@ import com.nikhil.f1tracker.data.local.entity.ConstructorEntity
 import com.nikhil.f1tracker.data.local.entity.DriverEntity
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_DRIVERS
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_TEAMS
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
+import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -118,8 +124,9 @@ private fun FavoritesContent(
                 title = "${driver.givenName} ${driver.familyName}",
                 subtitle = driver.code,
                 isSelected = driver.driverId in uiState.selection.driverIds,
+                stripeColor = driverColor(driver.driverId),
                 onClick = { onDriverClick(driver.driverId) },
-            )
+            ) { DriverAvatar(driver.driverId) }
         }
         item { SectionHeader("Favorite teams (${uiState.selection.teamIds.size}/$MAX_FAVORITE_TEAMS)") }
         items(uiState.teams, key = { it.constructorId }) { team ->
@@ -127,8 +134,9 @@ private fun FavoritesContent(
                 title = team.name,
                 subtitle = team.nationality,
                 isSelected = team.constructorId in uiState.selection.teamIds,
+                stripeColor = teamColor(team.constructorId),
                 onClick = { onTeamClick(team.constructorId) },
-            )
+            ) { TeamDot(team.constructorId, size = 20.dp) }
         }
     }
 }
@@ -149,16 +157,20 @@ private fun FavoriteRow(
     title: String,
     subtitle: String?,
     isSelected: Boolean,
+    stripeColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    leading: @Composable () -> Unit,
 ) {
     ListItem(
+        leadingContent = leading,
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = { Checkbox(checked = isSelected, onCheckedChange = { onClick() }) },
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .teamStripe(stripeColor),
     )
 }
 

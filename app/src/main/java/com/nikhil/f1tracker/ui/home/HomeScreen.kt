@@ -12,7 +12,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +28,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.StandingRow
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -105,22 +109,29 @@ private fun HomeContent(
         if (uiState.favoriteDrivers.isNotEmpty()) {
             item { SectionHeader("Favorite drivers") }
             items(uiState.favoriteDrivers, key = { it.driverId }) { driver ->
-                ListItem(
-                    headlineContent = { Text(driver.driverName) },
-                    supportingContent = driver.teamName?.let { { Text(it) } },
-                    trailingContent = { Text("P${driver.position} · ${driver.points.formatPoints()} pts") },
-                    modifier = Modifier.clickable { onDriverClick(driver.driverId) },
-                )
+                StandingRow(
+                    position = driver.position,
+                    title = driver.driverName,
+                    subtitle = driver.teamName,
+                    points = driver.points,
+                    leaderPoints = uiState.driverLeaderPoints,
+                    color = driverColor(driver.driverId, driver.constructorId),
+                    onClick = { onDriverClick(driver.driverId) },
+                ) { DriverAvatar(driver.driverId, driver.constructorId) }
             }
         }
         if (uiState.favoriteTeams.isNotEmpty()) {
             item { SectionHeader("Favorite teams") }
             items(uiState.favoriteTeams, key = { it.teamId }) { team ->
-                ListItem(
-                    headlineContent = { Text(team.teamName) },
-                    trailingContent = { Text("P${team.position} · ${team.points.formatPoints()} pts") },
-                    modifier = Modifier.clickable { onTeamClick(team.teamId) },
-                )
+                StandingRow(
+                    position = team.position,
+                    title = team.teamName,
+                    subtitle = null,
+                    points = team.points,
+                    leaderPoints = uiState.teamLeaderPoints,
+                    color = teamColor(team.teamId),
+                    onClick = { onTeamClick(team.teamId) },
+                ) { TeamDot(team.teamId, size = 20.dp) }
             }
         }
         if (uiState.favoriteDrivers.isEmpty() && uiState.favoriteTeams.isEmpty()) {
@@ -163,11 +174,6 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     )
 }
 
-private fun Double.formatPoints(): String = if (this == this.toLong().toDouble()) {
-    this.toLong().toString()
-} else {
-    this.toString()
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -183,7 +189,7 @@ private fun HomeScreenPreview() {
                     CalendarRace(3, "Saudi Arabian Grand Prix", "2026-03-15", "jeddah", RaceStatus.UPCOMING, 2026),
                 ),
                 favoriteDrivers = listOf(
-                    FavoriteDriverStanding("max_verstappen", "Max Verstappen", "Red Bull", 1, 437.0),
+                    FavoriteDriverStanding("max_verstappen", "Max Verstappen", "Red Bull", "red_bull", 1, 437.0),
                 ),
                 favoriteTeams = listOf(
                     FavoriteTeamStanding("red_bull", "Red Bull", 1, 589.0),

@@ -26,11 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nikhil.f1tracker.domain.stats.CircuitStat
 
 @Composable
 fun WeekendRoute(
     onBackClick: () -> Unit,
     onCircuitHistoryClick: (String) -> Unit,
+    onDriverClick: (String) -> Unit,
     viewModel: WeekendViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,9 +40,21 @@ fun WeekendRoute(
         uiState = uiState,
         onBackClick = onBackClick,
         onTabSelected = viewModel::selectTab,
+        onStatClick = viewModel::openStat,
         onCircuitHistoryClick = { onCircuitHistoryClick(uiState.circuitId) },
+        onDriverClick = onDriverClick,
         onRetry = viewModel::retry,
     )
+    uiState.statSheet?.let { sheet ->
+        StatDetailSheet(
+            sheet = sheet,
+            onDismiss = viewModel::closeStat,
+            onDriverClick = { driverId ->
+                viewModel.closeStat()
+                onDriverClick(driverId)
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +63,9 @@ fun WeekendScreen(
     uiState: WeekendUiState,
     onBackClick: () -> Unit,
     onTabSelected: (WeekendTab) -> Unit,
+    onStatClick: (CircuitStat) -> Unit,
     onCircuitHistoryClick: () -> Unit,
+    onDriverClick: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -90,8 +106,8 @@ fun WeekendScreen(
                 }
             }
             when (uiState.selectedTab) {
-                WeekendTab.CIRCUIT -> CircuitTab(uiState, onCircuitHistoryClick)
-                WeekendTab.FORM -> FormTab(uiState)
+                WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick)
+                WeekendTab.FORM -> FormTab(uiState, onDriverClick)
             }
         }
     }

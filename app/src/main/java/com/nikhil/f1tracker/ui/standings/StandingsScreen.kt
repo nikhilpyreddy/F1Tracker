@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -28,6 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nikhil.f1tracker.ui.common.identity.DriverAvatar
+import com.nikhil.f1tracker.ui.common.identity.StandingRow
+import com.nikhil.f1tracker.ui.common.identity.TeamDot
+import com.nikhil.f1tracker.ui.common.identity.driverColor
+import com.nikhil.f1tracker.ui.common.identity.teamColor
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
@@ -93,22 +97,33 @@ private fun StandingsContent(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { ModeToggle(uiState.mode, onModeSelected, Modifier.padding(16.dp)) }
         when (uiState.mode) {
-            StandingsMode.DRIVERS -> items(uiState.driverStandings, key = { it.driverId }) { row ->
-                ListItem(
-                    headlineContent = { Text(row.driverName) },
-                    supportingContent = row.teamName?.let { { Text(it) } },
-                    leadingContent = { Text("P${row.position}", style = MaterialTheme.typography.titleMedium) },
-                    trailingContent = { Text("${row.wins} wins · ${row.points.formatPoints()} pts") },
-                    modifier = Modifier.clickable { onDriverClick(row.driverId) },
-                )
+            StandingsMode.DRIVERS -> {
+                val leaderPoints = uiState.driverStandings.maxOfOrNull { it.points } ?: 0.0
+                items(uiState.driverStandings, key = { it.driverId }) { row ->
+                    StandingRow(
+                        position = row.position,
+                        title = row.driverName,
+                        subtitle = listOfNotNull(row.teamName, winsLabel(row.wins)).joinToString(" · "),
+                        points = row.points,
+                        leaderPoints = leaderPoints,
+                        color = driverColor(row.driverId, row.constructorId),
+                        onClick = { onDriverClick(row.driverId) },
+                    ) { DriverAvatar(row.driverId, row.constructorId) }
+                }
             }
-            StandingsMode.TEAMS -> items(uiState.constructorStandings, key = { it.constructorId }) { row ->
-                ListItem(
-                    headlineContent = { Text(row.teamName) },
-                    leadingContent = { Text("P${row.position}", style = MaterialTheme.typography.titleMedium) },
-                    trailingContent = { Text("${row.wins} wins · ${row.points.formatPoints()} pts") },
-                    modifier = Modifier.clickable { onTeamClick(row.constructorId) },
-                )
+            StandingsMode.TEAMS -> {
+                val leaderPoints = uiState.constructorStandings.maxOfOrNull { it.points } ?: 0.0
+                items(uiState.constructorStandings, key = { it.constructorId }) { row ->
+                    StandingRow(
+                        position = row.position,
+                        title = row.teamName,
+                        subtitle = winsLabel(row.wins),
+                        points = row.points,
+                        leaderPoints = leaderPoints,
+                        color = teamColor(row.constructorId),
+                        onClick = { onTeamClick(row.constructorId) },
+                    ) { TeamDot(row.constructorId, size = 20.dp) }
+                }
             }
         }
     }
@@ -137,26 +152,9 @@ private fun ModeToggle(mode: StandingsMode, onModeSelected: (StandingsMode) -> U
     }
 }
 
-private fun Double.formatPoints(): String =
-    if (this == this.toLong().toDouble()) this.toLong().toString() else this.toString()
 
-@Preview(showBackground = true)
-@Composable
-private fun StandingsScreenPreview() {
-    F1TrackerTheme {
-        StandingsScreen(
-            uiState = StandingsUiState(
-                isLoading = false,
-                driverStandings = listOf(
-                    DriverStandingRow("max_verstappen", 1, "Max Verstappen", "Red Bull", 437.0, 9),
-                    DriverStandingRow("norris", 2, "Lando Norris", "McLaren", 374.0, 4),
-                ),
-            ),
-            onModeSelected = {},
-            onDriverClick = {},
-            onTeamClick = {},
-            onRefresh = {},
-            onRetry = {},
-        )
-    }
+private fun winsLabel(wins: Int): String? = when (wins) {
+    0 -> null
+    1 -> "1 win"
+    else -> "$wins wins"
 }

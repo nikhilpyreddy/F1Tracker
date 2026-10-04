@@ -3,21 +3,30 @@
 A personal Formula 1 companion app for Android, built for a Pixel 10 Pro. Not published
 to the Play Store — this is a sideloaded, personal-use project.
 
-Data comes from [Jolpica-F1](https://github.com/jolpica/jolpica-f1), the actively
-maintained, Ergast-compatible successor API (the same source the
-[FastF1](https://pypi.org/project/fastf1/) Python library now uses internally).
+Data comes from [Jolpica-F1](https://github.com/jolpica/jolpica-f1) (results, qualifying,
+standings), [OpenF1](https://openf1.org) (telemetry, tyre stints, race control, team colours;
+2023+) and [Open-Meteo](https://open-meteo.com) (forecasts). All are free and used for
+personal, non-commercial purposes. See `docs/knowledge/data-sources.md` for details.
 
 ## Features
 
-- **Home** — next race countdown (tap through to its Grand Prix detail), plus your
-  favorite drivers' and teams' current standings
-- **Favorites** — pick up to 4 favorite drivers and 2 favorite teams
-- **Standings** — full current-season driver and constructor tables, with pull-to-refresh
-- **Driver / Team detail** — points-by-season trend chart across the last 4 years, plus
-  race-by-race results for any of those seasons
-- **Grand Prix detail** — pick any Grand Prix on the calendar and any driver to see their
-  results at that circuit across the last 6 years; switch between GPs and drivers freely
-- **Compare** — overlay two drivers' or two teams' season-points trends on one chart
+Built to inform F1 prediction-market decisions: every rate shows its sample size.
+
+- **Home**: next race, a season calendar (any Grand Prix opens its Race Weekend screen), and your
+  favourite drivers' and teams' standings with team colours
+- **Race Weekend**, per Grand Prix:
+  - **Circuit**: last year's podium and full results (any year); 10-season base rates (won from
+    pole, front row or top 3, podium starts, top 10 from outside the top 10, retirements, fastest
+    lap). Tap a stat to see the races behind it
+  - **Qualifying**: this weekend's results with gaps to pole, pole history and pole-to-win rate,
+    season qualifying form, teammate qualifying head-to-heads
+  - **Track**: speed-coloured map and profile of the latest pole lap (full throttle, longest
+    straight, slow/medium/fast braking corners), circuit type, weekend forecast
+  - **Strategy**: tyre stints for the whole field each year since 2023, common strategies, stint
+    lengths, Safety Car / VSC / red-flag rates, overtakes, pit-lane time
+  - **Form**: last 5 races per driver as coloured finish chips, teammate head-to-heads
+- **Driver pages**: points by season, plus finishing position race by race with the grid line
+- **Standings, Compare, Favorites**: this season's grid with team colours and headshots
 
 ## Tech stack
 

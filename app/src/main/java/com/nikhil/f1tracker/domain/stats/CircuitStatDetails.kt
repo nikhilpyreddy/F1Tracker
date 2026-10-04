@@ -14,6 +14,8 @@ enum class CircuitStat(val title: String) {
     PODIUM_STARTS("Podium finishers who started top 3"),
     TOP_TEN_FROM_OUTSIDE("Top-10 finishers from outside the top-10 grid"),
     RETIREMENTS("Retirements"),
+    FASTEST_LAP_WINNER("Fastest lap set by the winner"),
+    FASTEST_LAP_PODIUM("Fastest lap set by a podium finisher"),
 }
 
 /** One driver's line in a race breakdown. [counts] marks whether this line supports the stat. */
@@ -59,6 +61,13 @@ private fun raceDetail(stat: CircuitStat, season: Int, round: Int, race: List<Re
                 .sortedBy { it.classifiedOrder }
                 .map { it.line(counts = true) },
         )
+        CircuitStat.FASTEST_LAP_WINNER, CircuitStat.FASTEST_LAP_PODIUM -> {
+            val setter = race.firstOrNull { it.fastestLapRank == 1 }
+            val counts = setter?.let {
+                if (stat == CircuitStat.FASTEST_LAP_WINNER) it.isWinner else it.positionText.toIntOrNull() in 1..PODIUM_PLACES
+            }
+            StatDetailRace(season, round, counts, listOfNotNull(setter?.line(counts), winner?.takeIf { it != setter }?.line(null)))
+        }
         CircuitStat.RETIREMENTS -> StatDetailRace(
             season, round, null,
             race.filter { it.isRetirement }.sortedBy { it.classifiedOrder }.map { it.line(counts = true) },

@@ -13,6 +13,7 @@ data class RaceDto(
     val date: String,
     val time: String? = null,
     @SerialName("Results") val results: List<ResultDto> = emptyList(),
+    @SerialName("QualifyingResults") val qualifyingResults: List<QualifyingResultDto> = emptyList(),
     @SerialName("FirstPractice") val firstPractice: SessionDto? = null,
     @SerialName("SecondPractice") val secondPractice: SessionDto? = null,
     @SerialName("ThirdPractice") val thirdPractice: SessionDto? = null,
@@ -38,4 +39,14 @@ data class RaceTableDto(
     val season: String? = null,
     val round: String? = null,
     @SerialName("Races") val races: List<RaceDto> = emptyList(),
+)
+
+@Serializable
+data class QualifyingResultDto(
+    val position: String,
+    @SerialName("Driver") val driver: DriverDto,
+    @SerialName("Constructor") val constructor: ConstructorDto,
+    @SerialName("Q1") val q1: String? = null,
+    @SerialName("Q2") val q2: String? = null,
+    @SerialName("Q3") val q3: String? = null,
 )

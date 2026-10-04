@@ -10,6 +10,7 @@ import com.nikhil.f1tracker.data.local.dao.ConstructorStandingDao
 import com.nikhil.f1tracker.data.local.dao.DriverDao
 import com.nikhil.f1tracker.data.local.dao.DriverIdentityDao
 import com.nikhil.f1tracker.data.local.dao.DriverStandingDao
+import com.nikhil.f1tracker.data.local.dao.QualifyingDao
 import com.nikhil.f1tracker.data.local.dao.RaceDao
 import com.nikhil.f1tracker.data.local.dao.ResultDao
 import dagger.Module
@@ -59,4 +60,7 @@ object DatabaseModule {
 
     @Provides
     fun provideApiCacheDao(database: F1Database): ApiCacheDao = database.apiCacheDao()
+
+    @Provides
+    fun provideQualifyingDao(database: F1Database): QualifyingDao = database.qualifyingDao()
 }

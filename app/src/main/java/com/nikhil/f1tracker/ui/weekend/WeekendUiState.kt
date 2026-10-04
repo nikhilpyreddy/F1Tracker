@@ -6,7 +6,7 @@ import com.nikhil.f1tracker.domain.stats.StatDetailRace
 import com.nikhil.f1tracker.domain.stats.RaceOutcome
 import com.nikhil.f1tracker.domain.stats.Rate
 
-enum class WeekendTab(val label: String) { CIRCUIT("Circuit"), TRACK("Track"), STRATEGY("Strategy"), FORM("Form") }
+enum class WeekendTab(val label: String) { CIRCUIT("Circuit"), QUALIFYING("Qualifying"), TRACK("Track"), STRATEGY("Strategy"), FORM("Form") }
 
 data class WeekendUiState(
     val isLoading: Boolean = true,

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhil.f1tracker.domain.stats.CircuitStat
+import com.nikhil.f1tracker.ui.weekend.qualifying.QualifyingTab
 import com.nikhil.f1tracker.ui.weekend.strategy.StrategyTab
 import com.nikhil.f1tracker.ui.weekend.track.TrackTab
 
@@ -123,6 +124,7 @@ fun WeekendScreen(
             }
             when (uiState.selectedTab) {
                 WeekendTab.CIRCUIT -> CircuitTab(uiState, onStatClick, onCircuitHistoryClick, onDriverClick, onOpenResults)
+                WeekendTab.QUALIFYING -> QualifyingTab(onDriverClick)
                 WeekendTab.TRACK -> TrackTab()
                 WeekendTab.STRATEGY -> StrategyTab()
                 WeekendTab.FORM -> FormTab(uiState, onDriverClick)

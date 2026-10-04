@@ -94,6 +94,8 @@ private fun statCards(stats: CircuitStats): List<StatCardModel> = listOf(
         null,
     ),
     rateCard(CircuitStat.RETIREMENTS, stats.retirements, "starters"),
+    rateCard(CircuitStat.FASTEST_LAP_WINNER, stats.fastestLapByWinner, "races"),
+    rateCard(CircuitStat.FASTEST_LAP_PODIUM, stats.fastestLapByPodium, "races"),
 )
 
 private fun rateCard(stat: CircuitStat, rate: Rate, unit: String) = StatCardModel(

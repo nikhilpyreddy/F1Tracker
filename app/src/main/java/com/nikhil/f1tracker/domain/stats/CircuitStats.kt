@@ -19,6 +19,9 @@ data class CircuitStats(
     val podiumsFromTopThreeGrid: Rate,
     val topTenFinishersFromOutsideTopTenPerRace: Double?,
     val retirements: Rate,
+    /** Over races with fastest-lap data: was it set by the winner / a podium finisher? */
+    val fastestLapByWinner: Rate,
+    val fastestLapByPodium: Rate,
 )
 
 fun circuitStats(results: List<ResultEntity>): CircuitStats {
@@ -27,6 +30,7 @@ fun circuitStats(results: List<ResultEntity>): CircuitStats {
     val podiumFinishers = results.filter { it.positionText.toIntOrNull() in 1..PODIUM_PLACES }
     val starters = results.filter { it.didStart }
     val winnerGrids = winners.filter { it.grid > 0 }.map { it.grid }
+    val fastestLaps = results.filter { it.fastestLapRank == 1 }
     return CircuitStats(
         raceCount = races.size,
         seasons = races.map { it.first().season }.distinct().sorted(),
@@ -40,5 +44,7 @@ fun circuitStats(results: List<ResultEntity>): CircuitStats {
                 .toDouble() / it.size
         },
         retirements = starters.rateOf { it.isRetirement },
+        fastestLapByWinner = fastestLaps.rateOf { it.isWinner },
+        fastestLapByPodium = fastestLaps.rateOf { it.positionText.toIntOrNull() in 1..PODIUM_PLACES },
     )
 }

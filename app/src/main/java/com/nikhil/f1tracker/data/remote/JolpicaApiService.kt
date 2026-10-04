@@ -30,6 +30,20 @@ interface JolpicaApiService {
         @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
     ): RaceResponseDto
 
+    @GET("{season}/qualifying.json")
+    suspend fun getSeasonQualifying(
+        @Path("season") season: Int,
+        @Query("offset") offset: Int,
+        @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
+    ): RaceResponseDto
+
+    @GET("{season}/circuits/{circuitId}/qualifying.json")
+    suspend fun getCircuitQualifying(
+        @Path("season") season: Int,
+        @Path("circuitId") circuitId: String,
+        @Query("limit") limit: Int = JOLPICA_MAX_PAGE_SIZE,
+    ): RaceResponseDto
+
     @GET("circuits/{circuitId}/seasons.json")
     suspend fun getCircuitSeasons(
         @Path("circuitId") circuitId: String,

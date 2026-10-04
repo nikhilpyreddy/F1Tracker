@@ -46,6 +46,10 @@ class FakeJolpicaApiService(
         return seasonResultPages[offset] ?: EMPTY_RACES
     }
 
+    override suspend fun getSeasonQualifying(season: Int, offset: Int, limit: Int): RaceResponseDto = EMPTY_RACES
+
+    override suspend fun getCircuitQualifying(season: Int, circuitId: String, limit: Int): RaceResponseDto = EMPTY_RACES
+
     override suspend fun getCircuitSeasons(circuitId: String, limit: Int): SeasonTableResponseDto {
         val seasons = circuitSeasons[circuitId].orEmpty().map { SeasonDto(it.toString()) }
         return SeasonTableResponseDto(

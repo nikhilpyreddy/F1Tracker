@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.local.entity.RaceEntity
 import com.nikhil.f1tracker.data.local.entity.ResultEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
 import com.nikhil.f1tracker.ui.common.syncCatching
@@ -31,7 +32,7 @@ class DriverDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val driverId: String = checkNotNull(savedStateHandle["driverId"])
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(APP_ZONE).value
     private val seasons = lastFourSeasons(currentSeason)
 
     private val isLoading = MutableStateFlow(true)

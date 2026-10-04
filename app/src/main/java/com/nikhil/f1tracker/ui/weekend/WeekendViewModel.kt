@@ -8,6 +8,7 @@ import com.nikhil.f1tracker.data.local.entity.DriverEntity
 import com.nikhil.f1tracker.data.local.entity.ResultEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.domain.model.CIRCUIT_HISTORY_SEASONS
+import com.nikhil.f1tracker.domain.model.formatRaceWhen
 import com.nikhil.f1tracker.domain.stats.CircuitStat
 import com.nikhil.f1tracker.domain.stats.DriverForm
 import com.nikhil.f1tracker.domain.stats.TeammateHeadToHead
@@ -46,7 +47,9 @@ class WeekendViewModel @Inject constructor(
     private val header = combine(
         f1Repository.getRacesForSeason(season).map { races -> races.find { it.round == round } },
         f1Repository.getCircuit(circuitId),
-    ) { race, circuit -> Header(race?.raceName.orEmpty(), race?.date.orEmpty(), circuit?.circuitName.orEmpty()) }
+    ) { race, circuit ->
+        Header(race?.raceName.orEmpty(), race?.let { formatRaceWhen(it.date, it.time) }.orEmpty(), circuit?.circuitName.orEmpty())
+    }
 
     private val names = combine(f1Repository.getAllDrivers(), f1Repository.getAllConstructors()) { drivers, teams ->
         Names(drivers.associateBy { it.driverId }, teams.associateBy { it.constructorId })

@@ -36,7 +36,7 @@ import com.nikhil.f1tracker.data.local.entity.ResultEntity
         ApiCacheEntity::class,
         QualifyingEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class F1Database : RoomDatabase() {

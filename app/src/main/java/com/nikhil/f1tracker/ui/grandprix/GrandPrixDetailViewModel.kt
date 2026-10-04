@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.domain.model.GRAND_PRIX_HISTORY_YEARS
 import com.nikhil.f1tracker.domain.model.lastNSeasons
 import com.nikhil.f1tracker.ui.common.syncCatching
@@ -29,7 +30,7 @@ class GrandPrixDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(APP_ZONE).value
     private val historySeasons = lastNSeasons(currentSeason, GRAND_PRIX_HISTORY_YEARS)
 
     private val isLoading = MutableStateFlow(true)

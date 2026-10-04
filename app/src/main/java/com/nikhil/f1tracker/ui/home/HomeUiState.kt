@@ -1,5 +1,7 @@
 package com.nikhil.f1tracker.ui.home
 
+import java.time.Instant
+
 data class HomeUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
@@ -18,6 +20,10 @@ data class UpcomingRace(
     val round: Int,
     val circuitId: String,
     val season: Int,
+    /** Session starts (UTC instants; the UI shows them in US Central). Null if not published. */
+    val raceStart: Instant? = null,
+    val qualifyingStart: Instant? = null,
+    val sprintStart: Instant? = null,
 )
 
 enum class RaceStatus { COMPLETED, NEXT, UPCOMING }
@@ -29,6 +35,7 @@ data class CalendarRace(
     val circuitId: String,
     val status: RaceStatus,
     val season: Int,
+    val time: String? = null,
 )
 
 data class FavoriteDriverStanding(

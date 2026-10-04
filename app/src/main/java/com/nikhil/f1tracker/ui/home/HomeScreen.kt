@@ -146,24 +146,6 @@ private fun HomeContent(
     }
 }
 
-@Composable
-private fun NextRaceCard(nextRace: UpcomingRace?, onClick: (UpcomingRace) -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth().padding(16.dp)
-            .let { if (nextRace != null) it.clickable { onClick(nextRace) } else it },
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Next race", style = MaterialTheme.typography.labelLarge)
-            Text(
-                text = nextRace?.raceName ?: "Season complete",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            if (nextRace != null) {
-                Text(text = nextRace.date, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
-}
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier) {

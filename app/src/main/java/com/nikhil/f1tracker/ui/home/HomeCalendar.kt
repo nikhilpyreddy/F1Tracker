@@ -11,13 +11,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.nikhil.f1tracker.domain.model.formatShortDate
 
 private const val COMPLETED_RACES_SHOWN = 1
 private const val UPCOMING_RACES_SHOWN_AFTER_NEXT = 3
-private val CALENDAR_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
 
 /**
  * The slice of the calendar shown before "Show all": the most recent completed race, the next
@@ -66,7 +63,7 @@ private fun CalendarRow(race: CalendarRace, onClick: () -> Unit, modifier: Modif
         headlineContent = {
             Text(race.raceName, fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal)
         },
-        supportingContent = { Text(formatRaceDate(race.date)) },
+        supportingContent = { Text(formatShortDate(race.date, race.time)) },
         trailingContent = {
             when (race.status) {
                 RaceStatus.COMPLETED -> Text("Done")
@@ -79,5 +76,3 @@ private fun CalendarRow(race: CalendarRace, onClick: () -> Unit, modifier: Modif
     )
 }
 
-private fun formatRaceDate(date: String): String =
-    runCatching { LocalDate.parse(date).format(CALENDAR_DATE_FORMAT) }.getOrDefault(date)

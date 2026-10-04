@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.domain.model.lastFourSeasons
 import com.nikhil.f1tracker.ui.common.ChartPoint
 import com.nikhil.f1tracker.ui.common.syncCatching
@@ -26,7 +27,7 @@ class TeamDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val constructorId: String = checkNotNull(savedStateHandle["constructorId"])
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(APP_ZONE).value
     private val seasons = lastFourSeasons(currentSeason)
 
     private val isLoading = MutableStateFlow(true)

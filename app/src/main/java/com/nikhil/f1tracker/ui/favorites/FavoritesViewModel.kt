@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.data.repository.FavoritesRepository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.domain.model.FavoriteToggleResult
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_DRIVERS
 import com.nikhil.f1tracker.domain.model.MAX_FAVORITE_TEAMS
@@ -25,7 +26,7 @@ class FavoritesViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
 ) : ViewModel() {
 
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(APP_ZONE).value
     private val isLoading = MutableStateFlow(true)
     private val loadErrorMessage = MutableStateFlow<String?>(null)
     private val limitReachedMessage = MutableStateFlow<String?>(null)

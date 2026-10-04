@@ -3,6 +3,7 @@ package com.nikhil.f1tracker.ui.standings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.repository.F1Repository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,7 @@ class StandingsViewModel @Inject constructor(
     private val f1Repository: F1Repository,
 ) : ViewModel() {
 
-    private val currentSeason = Year.now().value
+    private val currentSeason = Year.now(APP_ZONE).value
 
     private val isLoading = MutableStateFlow(true)
     private val isRefreshing = MutableStateFlow(false)

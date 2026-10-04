@@ -9,7 +9,10 @@ import com.nikhil.f1tracker.data.local.entity.DriverStandingEntity
 import com.nikhil.f1tracker.data.local.entity.RaceEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.data.repository.FavoritesRepository
+import com.nikhil.f1tracker.domain.model.APP_ZONE
 import com.nikhil.f1tracker.domain.model.FavoriteSelection
+import com.nikhil.f1tracker.domain.model.RACE_DURATION
+import com.nikhil.f1tracker.domain.model.sessionStart
 import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 import java.time.Year
 import javax.inject.Inject
@@ -76,7 +80,7 @@ class HomeViewModel @Inject constructor(
             isRefreshing = status.isRefreshing,
             loadErrorMessage = status.loadErrorMessage,
             nextRace = calendar.find { it.status == RaceStatus.NEXT }
-                ?.let { UpcomingRace(it.raceName, it.date, it.round, it.circuitId, it.season) },
+                ?.let { next -> races.races.find { it.round == next.round }?.toUpcomingRace() },
             calendar = calendar,
             favoriteDrivers = races.driverStandings
                 .filter { it.driverId in entities.selection.driverIds }
@@ -92,22 +96,40 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun buildCalendar(races: List<RaceEntity>): List<CalendarRace> {
-        val today = LocalDate.now(clock)
         val sorted = races.sortedBy { it.round }
-        val nextRound = sorted.firstOrNull { it.isOnOrAfter(today) }?.round
+        val nextRound = sorted.firstOrNull { !it.isOver() }?.round
         return sorted.map { race ->
             val status = when {
                 race.round == nextRound -> RaceStatus.NEXT
-                race.isOnOrAfter(today) -> RaceStatus.UPCOMING
+                !race.isOver() -> RaceStatus.UPCOMING
                 else -> RaceStatus.COMPLETED
             }
-            CalendarRace(race.round, race.raceName, race.date, race.circuitId, status, race.season)
+            CalendarRace(race.round, race.raceName, race.date, race.circuitId, status, race.season, race.time)
         }
     }
 
-    // An unparseable date is treated as already past rather than hiding the whole calendar.
-    private fun RaceEntity.isOnOrAfter(day: LocalDate): Boolean =
-        runCatching { LocalDate.parse(date) >= day }.getOrDefault(false)
+    /**
+     * Over once the race has had time to finish. Without a published start time, fall back to the
+     * date: over from the next day (in app time). An unparseable date counts as over rather than
+     * hiding the whole calendar.
+     */
+    private fun RaceEntity.isOver(): Boolean {
+        sessionStart(date, time)?.let { return it.plus(RACE_DURATION) < Instant.now(clock) }
+        return runCatching { LocalDate.parse(date) < LocalDate.now(clock.withZone(APP_ZONE)) }.getOrDefault(true)
+    }
+
+    private fun RaceEntity.toUpcomingRace(): UpcomingRace {
+        return UpcomingRace(
+            raceName = raceName,
+            date = date,
+            round = round,
+            circuitId = circuitId,
+            season = season,
+            raceStart = sessionStart(date, time),
+            qualifyingStart = sessionStart(qualifyingDate, qualifyingTime),
+            sprintStart = sessionStart(sprintDate, sprintTime),
+        )
+    }
 
     private fun syncCurrentSeason(forceRefresh: Boolean) {
         if (forceRefresh) isRefreshing.value = true else isLoading.value = true

@@ -161,6 +161,7 @@ private fun WeatherCard(state: TrackUiState) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Race weekend forecast", style = MaterialTheme.typography.titleSmall)
+            Text("Days are local to the circuit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             state.weather.forEach { day ->
                 Fact(
                     day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),

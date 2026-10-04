@@ -10,4 +10,8 @@ fun RaceDto.toEntity(): RaceEntity = RaceEntity(
     circuitId = circuit.circuitId,
     date = date,
     time = time,
+    qualifyingDate = qualifying?.date,
+    qualifyingTime = qualifying?.time,
+    sprintDate = sprint?.date,
+    sprintTime = sprint?.time,
 )

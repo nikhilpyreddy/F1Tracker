@@ -1,5 +1,6 @@
 package com.nikhil.f1tracker.ui.compare
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhil.f1tracker.data.local.entity.ConstructorEntity
@@ -29,6 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CompareViewModel @Inject constructor(
     private val f1Repository: F1Repository,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
     private val currentSeason = Year.now(APP_ZONE).value
@@ -37,7 +39,8 @@ class CompareViewModel @Inject constructor(
     private val isLoading = MutableStateFlow(true)
     private val loadErrorMessage = MutableStateFlow<String?>(null)
     private val mode = MutableStateFlow(CompareMode.DRIVERS)
-    private val selectedFirstId = MutableStateFlow<String?>(null)
+    // Opened from a driver page with "Compare with…": that driver is pre-selected.
+    private val selectedFirstId = MutableStateFlow(savedStateHandle.get<String>("first"))
     private val selectedSecondId = MutableStateFlow<String?>(null)
 
     private val roster = combine(

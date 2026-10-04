@@ -1,5 +1,6 @@
 package com.nikhil.f1tracker.ui.home
 
+import com.nikhil.f1tracker.domain.model.RaceStatus
 import java.time.Instant
 
 data class HomeUiState(
@@ -25,8 +26,6 @@ data class UpcomingRace(
     val qualifyingStart: Instant? = null,
     val sprintStart: Instant? = null,
 )
-
-enum class RaceStatus { COMPLETED, NEXT, UPCOMING }
 
 data class CalendarRace(
     val round: Int,

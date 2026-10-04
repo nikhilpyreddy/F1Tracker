@@ -18,9 +18,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +50,8 @@ fun HomeRoute(
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
     onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
+    onFavoritesClick: () -> Unit,
+    onCompareClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,6 +60,8 @@ fun HomeRoute(
         onDriverClick = onDriverClick,
         onTeamClick = onTeamClick,
         onRaceClick = onRaceClick,
+        onFavoritesClick = onFavoritesClick,
+        onCompareClick = onCompareClick,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retrySync,
     )
@@ -60,13 +74,20 @@ fun HomeScreen(
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
     onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
+    onFavoritesClick: () -> Unit,
+    onCompareClick: () -> Unit,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("F1 Tracker") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("F1 Tracker") },
+                actions = { HomeMenu(onFavoritesClick, onCompareClick) },
+            )
+        },
     ) { innerPadding ->
         when {
             uiState.isLoading -> Box(Modifier.padding(innerPadding).fillMaxSize(), Alignment.Center) {
@@ -83,7 +104,7 @@ fun HomeScreen(
                 onRefresh = onRefresh,
                 modifier = Modifier.padding(innerPadding).fillMaxSize(),
             ) {
-                HomeContent(uiState, onDriverClick, onTeamClick, onRaceClick)
+                HomeContent(uiState, onDriverClick, onTeamClick, onRaceClick, onFavoritesClick)
             }
         }
     }
@@ -95,19 +116,18 @@ private fun HomeContent(
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
     onRaceClick: (season: Int, round: Int, circuitId: String) -> Unit,
+    onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isCalendarExpanded by rememberSaveable { mutableStateOf(false) }
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item { NextRaceCard(uiState.nextRace, onClick = { onRaceClick(it.season, it.round, it.circuitId) }) }
-        calendarSection(
-            calendar = uiState.calendar,
-            isExpanded = isCalendarExpanded,
-            onToggleExpanded = { isCalendarExpanded = !isCalendarExpanded },
-            onRaceClick = { onRaceClick(it.season, it.round, it.circuitId) },
-        )
+        item {
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Your favourites", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onClick = onFavoritesClick) { Text("Edit") }
+            }
+        }
         if (uiState.favoriteDrivers.isNotEmpty()) {
-            item { SectionHeader("Favorite drivers") }
             items(uiState.favoriteDrivers, key = { it.driverId }) { driver ->
                 StandingRow(
                     position = driver.position,
@@ -121,7 +141,6 @@ private fun HomeContent(
             }
         }
         if (uiState.favoriteTeams.isNotEmpty()) {
-            item { SectionHeader("Favorite teams") }
             items(uiState.favoriteTeams, key = { it.teamId }) { team ->
                 StandingRow(
                     position = team.position,
@@ -136,11 +155,9 @@ private fun HomeContent(
         }
         if (uiState.favoriteDrivers.isEmpty() && uiState.favoriteTeams.isEmpty()) {
             item {
-                Text(
-                    text = "Pick your favorite drivers and teams to see them here.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp),
-                )
+                OutlinedButton(onClick = onFavoritesClick, modifier = Modifier.padding(16.dp)) {
+                    Text("Pick favourite drivers and teams")
+                }
             }
         }
     }
@@ -165,11 +182,6 @@ private fun HomeScreenPreview() {
             uiState = HomeUiState(
                 isLoading = false,
                 nextRace = UpcomingRace("Bahrain Grand Prix", "2026-03-08", 1, "bahrain", 2026),
-                calendar = listOf(
-                    CalendarRace(1, "Australian Grand Prix", "2026-03-01", "albert_park", RaceStatus.COMPLETED, 2026),
-                    CalendarRace(2, "Bahrain Grand Prix", "2026-03-08", "bahrain", RaceStatus.NEXT, 2026),
-                    CalendarRace(3, "Saudi Arabian Grand Prix", "2026-03-15", "jeddah", RaceStatus.UPCOMING, 2026),
-                ),
                 favoriteDrivers = listOf(
                     FavoriteDriverStanding("max_verstappen", "Max Verstappen", "Red Bull", "red_bull", 1, 437.0),
                 ),
@@ -180,8 +192,37 @@ private fun HomeScreenPreview() {
             onDriverClick = {},
             onTeamClick = {},
             onRaceClick = { _, _, _ -> },
+            onFavoritesClick = {},
+            onCompareClick = {},
             onRefresh = {},
             onRetry = {},
+        )
+    }
+}
+
+@Composable
+private fun HomeMenu(onFavoritesClick: () -> Unit, onCompareClick: () -> Unit) {
+    var isOpen by remember { mutableStateOf(false) }
+    var showSources by remember { mutableStateOf(false) }
+    IconButton(onClick = { isOpen = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More") }
+    DropdownMenu(expanded = isOpen, onDismissRequest = { isOpen = false }) {
+        DropdownMenuItem(text = { Text("Favourites") }, onClick = { isOpen = false; onFavoritesClick() })
+        DropdownMenuItem(text = { Text("Compare") }, onClick = { isOpen = false; onCompareClick() })
+        DropdownMenuItem(text = { Text("Data sources") }, onClick = { isOpen = false; showSources = true })
+    }
+    if (showSources) {
+        AlertDialog(
+            onDismissRequest = { showSources = false },
+            confirmButton = { TextButton(onClick = { showSources = false }) { Text("OK") } },
+            title = { Text("Data sources") },
+            text = {
+                Text(
+                    "Results, qualifying and standings: Jolpica-F1 (api.jolpi.ca).\n" +
+                        "Telemetry, tyres, race control, team colours: OpenF1 (openf1.org), 2023 onwards.\n" +
+                        "Weather: Open-Meteo (open-meteo.com).\n\n" +
+                        "All times are US Central (CDT/CST). Personal, non-commercial use.",
+                )
+            },
         )
     }
 }

@@ -9,9 +9,9 @@ import com.nikhil.f1tracker.data.local.entity.DriverStandingEntity
 import com.nikhil.f1tracker.data.local.entity.RaceEntity
 import com.nikhil.f1tracker.data.repository.F1Repository
 import com.nikhil.f1tracker.data.repository.FavoritesRepository
-import com.nikhil.f1tracker.domain.model.APP_ZONE
+import com.nikhil.f1tracker.domain.model.RaceStatus
+import com.nikhil.f1tracker.domain.model.raceStatuses
 import com.nikhil.f1tracker.domain.model.FavoriteSelection
-import com.nikhil.f1tracker.domain.model.RACE_DURATION
 import com.nikhil.f1tracker.domain.model.sessionStart
 import com.nikhil.f1tracker.ui.common.syncCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.Instant
-import java.time.LocalDate
 import java.time.Year
 import javax.inject.Inject
 
@@ -95,28 +94,10 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun buildCalendar(races: List<RaceEntity>): List<CalendarRace> {
-        val sorted = races.sortedBy { it.round }
-        val nextRound = sorted.firstOrNull { !it.isOver() }?.round
-        return sorted.map { race ->
-            val status = when {
-                race.round == nextRound -> RaceStatus.NEXT
-                !race.isOver() -> RaceStatus.UPCOMING
-                else -> RaceStatus.COMPLETED
-            }
+    private fun buildCalendar(races: List<RaceEntity>): List<CalendarRace> =
+        raceStatuses(races, Instant.now(clock)).map { (race, status) ->
             CalendarRace(race.round, race.raceName, race.date, race.circuitId, status, race.season, race.time)
         }
-    }
-
-    /**
-     * Over once the race has had time to finish. Without a published start time, fall back to the
-     * date: over from the next day (in app time). An unparseable date counts as over rather than
-     * hiding the whole calendar.
-     */
-    private fun RaceEntity.isOver(): Boolean {
-        sessionStart(date, time)?.let { return it.plus(RACE_DURATION) < Instant.now(clock) }
-        return runCatching { LocalDate.parse(date) < LocalDate.now(clock.withZone(APP_ZONE)) }.getOrDefault(true)
-    }
 
     private fun RaceEntity.toUpcomingRace(): UpcomingRace {
         return UpcomingRace(

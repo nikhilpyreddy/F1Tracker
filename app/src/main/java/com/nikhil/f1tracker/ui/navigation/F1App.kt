@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -33,20 +33,23 @@ import com.nikhil.f1tracker.ui.driver.DriverDetailRoute
 import com.nikhil.f1tracker.ui.favorites.FavoritesRoute
 import com.nikhil.f1tracker.ui.grandprix.GrandPrixDetailRoute
 import com.nikhil.f1tracker.ui.home.HomeRoute
+import com.nikhil.f1tracker.ui.races.RacesRoute
 import com.nikhil.f1tracker.ui.standings.StandingsRoute
 import com.nikhil.f1tracker.ui.team.TeamDetailRoute
 import com.nikhil.f1tracker.ui.weekend.WeekendRoute
 
 private object F1Destinations {
     const val HOME = "home"
+    const val RACES = "races"
     const val STANDINGS = "standings"
-    const val COMPARE = "compare"
+    const val COMPARE = "compare?first={first}"
     const val FAVORITES = "favorites"
     const val DRIVER_DETAIL = "driverDetail/{driverId}"
     const val TEAM_DETAIL = "teamDetail/{constructorId}"
     const val GRAND_PRIX_DETAIL = "grandPrixDetail/{circuitId}?driverId={driverId}"
     const val WEEKEND = "weekend/{season}/{round}/{circuitId}"
 
+    fun compare(firstDriverId: String? = null) = if (firstDriverId == null) "compare" else "compare?first=$firstDriverId"
     fun driverDetail(driverId: String) = "driverDetail/$driverId"
     fun teamDetail(constructorId: String) = "teamDetail/$constructorId"
     fun weekend(season: Int, round: Int, circuitId: String) = "weekend/$season/$round/$circuitId"
@@ -62,13 +65,10 @@ private data class TopLevelDestination(
 
 private val topLevelDestinations = listOf(
     TopLevelDestination(F1Destinations.HOME, "Home") { Icon(Icons.Filled.Home, contentDescription = null) },
+    TopLevelDestination(F1Destinations.RACES, "Races") { Icon(Icons.Filled.DateRange, contentDescription = null) },
     TopLevelDestination(F1Destinations.STANDINGS, "Standings") {
         Icon(Icons.AutoMirrored.Filled.List, contentDescription = null)
     },
-    TopLevelDestination(F1Destinations.COMPARE, "Compare") {
-        Text("VS", style = MaterialTheme.typography.titleMedium)
-    },
-    TopLevelDestination(F1Destinations.FAVORITES, "Favorites") { Icon(Icons.Filled.Star, contentDescription = null) },
 )
 
 @Composable
@@ -123,19 +123,38 @@ private fun F1Scaffold(navController: NavHostController) {
                     onRaceClick = { season, round, circuitId ->
                         navController.navigate(F1Destinations.weekend(season, round, circuitId))
                     },
+                    onFavoritesClick = { navController.navigate(F1Destinations.FAVORITES) },
+                    onCompareClick = { navController.navigate(F1Destinations.compare()) },
+                )
+            }
+            composable(F1Destinations.RACES) {
+                RacesRoute(
+                    onRaceClick = { season, round, circuitId ->
+                        navController.navigate(F1Destinations.weekend(season, round, circuitId))
+                    },
                 )
             }
             composable(F1Destinations.STANDINGS) {
                 StandingsRoute(
                     onDriverClick = { driverId -> navController.navigate(F1Destinations.driverDetail(driverId)) },
                     onTeamClick = { constructorId -> navController.navigate(F1Destinations.teamDetail(constructorId)) },
+                    onCompareClick = { navController.navigate(F1Destinations.compare()) },
                 )
             }
-            composable(F1Destinations.COMPARE) {
-                CompareRoute()
+            composable(
+                route = F1Destinations.COMPARE,
+                arguments = listOf(
+                    navArgument("first") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
+            ) {
+                CompareRoute(onBackClick = { navController.navigateUp() })
             }
             composable(F1Destinations.FAVORITES) {
-                FavoritesRoute()
+                FavoritesRoute(onBackClick = { navController.navigateUp() })
             }
             composable(
                 route = F1Destinations.DRIVER_DETAIL,
@@ -144,9 +163,10 @@ private fun F1Scaffold(navController: NavHostController) {
                 val driverId = entry.arguments?.getString("driverId").orEmpty()
                 DriverDetailRoute(
                     onBackClick = { navController.navigateUp() },
-                    onResultClick = { circuitId ->
-                        navController.navigate(F1Destinations.grandPrixDetail(circuitId, driverId))
+                    onResultClick = { season, round, circuitId ->
+                        navController.navigate(F1Destinations.weekend(season, round, circuitId))
                     },
+                    onCompareClick = { navController.navigate(F1Destinations.compare(driverId)) },
                 )
             }
             composable(

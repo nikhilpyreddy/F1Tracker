@@ -20,6 +20,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -42,10 +46,11 @@ import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
-fun FavoritesRoute(viewModel: FavoritesViewModel = hiltViewModel()) {
+fun FavoritesRoute(onBackClick: () -> Unit, viewModel: FavoritesViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     FavoritesScreen(
         uiState = uiState,
+        onBackClick = onBackClick,
         onDriverClick = viewModel::toggleDriver,
         onTeamClick = viewModel::toggleTeam,
         onRetry = viewModel::retryRosterSync,
@@ -57,6 +62,7 @@ fun FavoritesRoute(viewModel: FavoritesViewModel = hiltViewModel()) {
 @Composable
 fun FavoritesScreen(
     uiState: FavoritesUiState,
+    onBackClick: () -> Unit,
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
     onRetry: () -> Unit,
@@ -74,7 +80,16 @@ fun FavoritesScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("Favorites") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Favourites") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when {
@@ -179,6 +194,7 @@ private fun FavoriteRow(
 private fun FavoritesScreenPreview() {
     F1TrackerTheme {
         FavoritesScreen(
+            onBackClick = {},
             uiState = FavoritesUiState(
                 isLoading = false,
                 drivers = listOf(

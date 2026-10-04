@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,12 +39,14 @@ import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 fun StandingsRoute(
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
+    onCompareClick: () -> Unit,
     viewModel: StandingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     StandingsScreen(
         uiState = uiState,
         onModeSelected = viewModel::setMode,
+        onCompareClick = onCompareClick,
         onDriverClick = onDriverClick,
         onTeamClick = onTeamClick,
         onRefresh = viewModel::refresh,
@@ -56,6 +59,7 @@ fun StandingsRoute(
 fun StandingsScreen(
     uiState: StandingsUiState,
     onModeSelected: (StandingsMode) -> Unit,
+    onCompareClick: () -> Unit,
     onDriverClick: (String) -> Unit,
     onTeamClick: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -64,7 +68,12 @@ fun StandingsScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("Standings") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Standings") },
+                actions = { TextButton(onClick = onCompareClick) { Text("Compare") } },
+            )
+        },
     ) { innerPadding ->
         when {
             uiState.isLoading -> Box(Modifier.padding(innerPadding).fillMaxSize(), Alignment.Center) {

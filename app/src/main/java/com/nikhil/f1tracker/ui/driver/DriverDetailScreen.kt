@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextButton
 import java.util.Locale
 import com.nikhil.f1tracker.ui.common.RacePosition
 import com.nikhil.f1tracker.ui.common.PositionChart
@@ -54,7 +55,8 @@ import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 @Composable
 fun DriverDetailRoute(
     onBackClick: () -> Unit,
-    onResultClick: (circuitId: String) -> Unit,
+    onResultClick: (season: Int, round: Int, circuitId: String) -> Unit,
+    onCompareClick: () -> Unit,
     viewModel: DriverDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -63,6 +65,7 @@ fun DriverDetailRoute(
         onBackClick = onBackClick,
         onSeasonSelected = viewModel::selectSeason,
         onResultClick = onResultClick,
+        onCompareClick = onCompareClick,
         onRetry = viewModel::retry,
     )
 }
@@ -73,7 +76,8 @@ fun DriverDetailScreen(
     uiState: DriverDetailUiState,
     onBackClick: () -> Unit,
     onSeasonSelected: (Int) -> Unit,
-    onResultClick: (String) -> Unit,
+    onResultClick: (season: Int, round: Int, circuitId: String) -> Unit,
+    onCompareClick: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,6 +91,7 @@ fun DriverDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = { TextButton(onClick = onCompareClick) { Text("Compare with…") } },
             )
         },
     ) { innerPadding ->
@@ -114,7 +119,7 @@ fun DriverDetailScreen(
 private fun DriverDetailContent(
     uiState: DriverDetailUiState,
     onSeasonSelected: (Int) -> Unit,
-    onResultClick: (String) -> Unit,
+    onResultClick: (season: Int, round: Int, circuitId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(DriverTab.RACE_BY_RACE) }
@@ -175,7 +180,9 @@ private fun DriverDetailContent(
                 trailingContent = {
                     Text("${result.positionText} · ${result.points.formatPoints()} pts")
                 },
-                modifier = Modifier.clickable { onResultClick(result.circuitId) },
+                modifier = Modifier.clickable {
+                    uiState.selectedSeason?.let { onResultClick(it, result.round, result.circuitId) }
+                },
             )
         }
     }
@@ -233,7 +240,8 @@ private fun DriverDetailScreenPreview() {
             ),
             onBackClick = {},
             onSeasonSelected = {},
-            onResultClick = {},
+            onResultClick = { _, _, _ -> },
+            onCompareClick = {},
             onRetry = {},
         )
     }

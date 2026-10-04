@@ -23,6 +23,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,10 +46,11 @@ import com.nikhil.f1tracker.ui.common.identity.teamStripe
 import com.nikhil.f1tracker.ui.theme.F1TrackerTheme
 
 @Composable
-fun CompareRoute(viewModel: CompareViewModel = hiltViewModel()) {
+fun CompareRoute(onBackClick: () -> Unit, viewModel: CompareViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CompareScreen(
         uiState = uiState,
+        onBackClick = onBackClick,
         onModeSelected = viewModel::setMode,
         onItemSelected = viewModel::select,
         onRetry = viewModel::retry,
@@ -56,6 +61,7 @@ fun CompareRoute(viewModel: CompareViewModel = hiltViewModel()) {
 @Composable
 fun CompareScreen(
     uiState: CompareUiState,
+    onBackClick: () -> Unit,
     onModeSelected: (CompareMode) -> Unit,
     onItemSelected: (String) -> Unit,
     onRetry: () -> Unit,
@@ -63,7 +69,16 @@ fun CompareScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("Compare") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Compare") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         when {
             uiState.isLoading -> Box(Modifier.padding(innerPadding).fillMaxSize(), Alignment.Center) {
@@ -208,6 +223,7 @@ private fun ModeToggle(mode: CompareMode, onModeSelected: (CompareMode) -> Unit)
 private fun CompareScreenPreview() {
     F1TrackerTheme {
         CompareScreen(
+            onBackClick = {},
             uiState = CompareUiState(
                 isLoading = false,
                 mode = CompareMode.DRIVERS,
